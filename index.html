@@ -335,14 +335,6 @@
             e.preventDefault();
             if (!initials.trim()) return;
             
-            const dailyItems = Object.keys(checklist).filter(k => k.startsWith('daily_'));
-            const allDailyChecked = dailyItems.every(k => checklist[k] === true);
-            
-            if (!allDailyChecked) {
-              setError("Please complete all Daily tasks.");
-              return;
-            }
-
             setSubmitting(true);
             setError(null);
 
@@ -432,7 +424,9 @@
                   th { background-color: #f8fafc; color: #0f172a; font-weight: bold; text-transform: uppercase; font-size: 11px; }
                   .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
                   .bg-green { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+                  .bg-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
                   .bg-blue { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; margin-bottom: 4px; display: inline-block; }
+                  .missed-text { color: #dc2626; font-size: 10px; margin-top: 4px; display: block; }
                   .date-cell { white-space: nowrap; }
                 </style>
               </head>
@@ -461,12 +455,21 @@
               const dateStr = dateObj.toLocaleDateString();
               const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               
+              const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+              const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
+              const dailyTotal = dailyKeys.length;
+              const isAllDailyDone = dailyDone === dailyTotal;
+              const missingDailyItems = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+
               const weeklyItems = Object.entries(log.checklist || {})
                 .filter(([k, v]) => k.startsWith('weekly_') && v)
                 .map(([k]) => `<span class="badge bg-blue">${k.replace('weekly_', '')}</span>`)
                 .join(' ');
 
-              const dailyBadge = `<span class="badge bg-green">Daily Completed</span>`;
+              const dailyBadge = isAllDailyDone 
+                ? `<span class="badge bg-green">Daily Completed</span>`
+                : `<span class="badge bg-red">${dailyDone}/${dailyTotal} Completed</span><span class="missed-text"><strong>Missed:</strong> ${missingDailyItems.join(', ')}</span>`;
+
               const commentText = log.comment ? `<em>${log.comment}</em>` : '<span style="color: #94a3b8;">None</span>';
 
               html += `
@@ -853,7 +856,14 @@
                         <p className="font-semibold">No audits recorded for {selectedUnit} yet.</p>
                       </div>
                     ) : historyTab === 'logs' && (
-                      currentLogs.map((log) => (
+                      currentLogs.map((log) => {
+                        const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+                        const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
+                        const dailyTotal = dailyKeys.length;
+                        const isAllDailyDone = dailyDone === dailyTotal;
+                        const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+
+                        return (
                         <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
                           {/* DELETE ACTION WITH PIN */}
                           <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
@@ -916,8 +926,10 @@
                           </div>
                           
                           <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
-                            <span className="text-[10px] px-2.5 py-1 bg-green-50 text-green-700 rounded-lg border border-green-200 font-extrabold uppercase tracking-wide">
-                              Daily Done
+                            <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${
+                              isAllDailyDone ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                            }`}>
+                              {isAllDailyDone ? 'Daily Done' : `Daily: ${dailyDone}/${dailyTotal}`}
                             </span>
                             {Object.entries(log.checklist || {}).filter(([k,v]) => k.startsWith('weekly_') && v).length > 0 && (
                               <span className="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 font-extrabold uppercase tracking-wide">
@@ -926,6 +938,13 @@
                             )}
                           </div>
 
+                          {!isAllDailyDone && (
+                            <div className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded-2xl border border-red-100">
+                              <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missed Tasks:</span>
+                              {missingDaily.join(', ')}
+                            </div>
+                          )}
+
                           {log.comment && (
                             <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic">
                               <span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>
@@ -933,7 +952,8 @@
                             </div>
                           )}
                         </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 )}
