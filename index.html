@@ -44,7 +44,9 @@
           collection, 
           addDoc, 
           onSnapshot, 
-          query 
+          query,
+          doc,
+          deleteDoc
         } from 'firebase/firestore';
         import { 
           LayoutDashboard,
@@ -63,8 +65,14 @@
           AlertCircle,
           FileText,
           CalendarDays,
-          XCircle
+          XCircle,
+          Trash2,
+          Lock
         } from 'lucide-react';
+
+        // --- Configuration ---
+        // Change this PIN to your own secret code for deletions
+        const ADMIN_PIN = "X135";
 
         // --- Firebase Configuration ---
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -214,6 +222,8 @@
           const [loading, setLoading] = useState(true);
           const [submitting, setSubmitting] = useState(false);
           const [error, setError] = useState(null);
+          const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+          const [pinInput, setPinInput] = useState('');
 
           // Form State
           const [selectedLocKey, setSelectedLocKey] = useState(null);
@@ -234,11 +244,7 @@
                 }
               } catch (err) {
                 console.error("Auth error:", err);
-                if (err.code === 'auth/operation-not-allowed') {
-                  setError("Authentication failed: Please enable 'Anonymous' sign-in in your Firebase Console (Authentication -> Sign-in method).");
-                } else {
-                  setError("Auth Error: " + err.message);
-                }
+                setError("Failed to authenticate. Please check Firebase Auth settings.");
               }
             };
 
@@ -261,17 +267,12 @@
               setLogs(sortedData);
             }, (err) => {
               console.error("Firestore error:", err);
-              if (err.code === 'permission-denied') {
-                setError("Database error: Missing permissions. Please check your Firestore rules.");
-              } else {
-                setError("Could not load history: " + err.message);
-              }
+              setError("Could not load history: " + err.message);
             });
             return () => unsubscribe();
           }, [user]);
 
           // --- Helpers ---
-          // This safely assigns any older logs you made before this update to Lady Sobell!
           const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
 
           const isSameDay = (d1, d2) => {
@@ -309,6 +310,25 @@
 
           const handleToggle = (itemKey) => {
             setChecklist(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
+          };
+
+          const handleDelete = async (logId) => {
+            if (pinInput !== ADMIN_PIN) {
+              setError("Invalid Admin PIN. Deletion cancelled.");
+              setPinInput('');
+              return;
+            }
+
+            try {
+              const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', logId);
+              await deleteDoc(logRef);
+              setDeleteConfirmId(null);
+              setPinInput('');
+              setError(null);
+            } catch (err) {
+              console.error("Delete error:", err);
+              setError("Failed to delete entry. Check permissions.");
+            }
           };
 
           const handleSubmit = async (e) => {
@@ -368,7 +388,7 @@
 
             let complianceHtml = `
               <div style="margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
-                <h2 style="color: #334155; font-size: 16px; margin-bottom: 10px;">7-Day Compliance Summary</h2>
+                <h2 style="color: #334155; font-size: 16px; margin-bottom: 10px;">7-Day Compliance Summary (${selectedUnit})</h2>
                 <table>
                   <thead>
                     <tr>
@@ -521,7 +541,7 @@
 
               <main className="max-w-md mx-auto p-4 space-y-6">
                 {error && (
-                  <div className="bg-red-50 text-red-600 p-3 rounded-2xl border border-red-100 text-sm flex items-start gap-2 shadow-sm">
+                  <div className="bg-red-50 text-red-600 p-3 rounded-2xl border border-red-100 text-sm flex items-start gap-2 shadow-sm animate-pulse">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span className="font-medium">{error}</span>
                   </div>
@@ -597,7 +617,7 @@
 
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
-                    <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area</h2>
+                    <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
                     <div className="space-y-3">
                       {Object.entries(CHECKLIST_DATA).map(([key, data]) => {
                         const isCompleted = completedTodayKeys.includes(key);
@@ -636,7 +656,7 @@
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="bg-blue-50 p-5 rounded-3xl border border-blue-100 flex items-center justify-between shadow-sm">
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-blue-700 tracking-widest">Auditing Location</span>
+                        <span className="text-[10px] uppercase font-bold text-blue-700 tracking-widest">Auditing Location ({selectedUnit})</span>
                         <div className="font-bold text-blue-900 text-lg">{CHECKLIST_DATA[selectedLocKey].title}</div>
                       </div>
                     </div>
@@ -834,8 +854,49 @@
                       </div>
                     ) : historyTab === 'logs' && (
                       currentLogs.map((log) => (
-                        <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-                          <div className="flex justify-between items-start">
+                        <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
+                          {/* DELETE ACTION WITH PIN */}
+                          <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                             {deleteConfirmId === log.id ? (
+                               <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
+                                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                                   <Lock className="w-3 h-3" /> Admin Security
+                                 </div>
+                                 <input 
+                                   type="password"
+                                   value={pinInput}
+                                   onChange={(e) => setPinInput(e.target.value)}
+                                   placeholder="Enter PIN"
+                                   className="w-24 p-2 text-xs border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-200 transition-all text-center"
+                                   autoFocus
+                                 />
+                                 <div className="flex gap-1.5 w-full">
+                                    <button 
+                                      onClick={() => {setDeleteConfirmId(null); setPinInput('');}}
+                                      className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDelete(log.id)}
+                                      className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm"
+                                    >
+                                      Delete
+                                    </button>
+                                 </div>
+                               </div>
+                             ) : (
+                               <button 
+                                 onClick={() => setDeleteConfirmId(log.id)}
+                                 className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                                 title="Delete Entry"
+                               >
+                                 <Trash2 className="w-4 h-4" />
+                               </button>
+                             )}
+                          </div>
+
+                          <div className="flex justify-between items-start pr-10">
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <div className="bg-blue-50 p-2 rounded-xl">
