@@ -221,6 +221,7 @@
           const [checklist, setChecklist] = useState({});
           const [comment, setComment] = useState('');
           const [appUrl, setAppUrl] = useState(window.location.href);
+          const [selectedUnit, setSelectedUnit] = useState('Lady Sobell');
 
           // --- Auth Setup ---
           useEffect(() => {
@@ -270,6 +271,9 @@
           }, [user]);
 
           // --- Helpers ---
+          // This safely assigns any older logs you made before this update to Lady Sobell!
+          const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
+
           const isSameDay = (d1, d2) => {
             return d1.getFullYear() === d2.getFullYear() && 
                    d1.getMonth() === d2.getMonth() && 
@@ -278,7 +282,7 @@
 
           const getCompletedTodayKeys = () => {
             const today = new Date();
-            return logs.filter(log => {
+            return currentLogs.filter(log => {
               const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
               return isSameDay(logDate, today);
             }).map(log => log.locationKey);
@@ -328,6 +332,7 @@
                 initials: initials.toUpperCase(),
                 locationKey: selectedLocKey,
                 locationTitle: CHECKLIST_DATA[selectedLocKey].title,
+                unit: selectedUnit,
                 checklist,
                 comment: comment.trim(),
                 timestamp: new Date(),
@@ -353,7 +358,7 @@
           };
 
           const exportToPDF = () => {
-            if (logs.length === 0) return;
+            if (currentLogs.length === 0) return;
 
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
@@ -377,7 +382,7 @@
             Object.entries(CHECKLIST_DATA).forEach(([locKey, locData]) => {
               complianceHtml += `<tr><td><strong>${locData.title}</strong></td>`;
               last7Days.forEach(d => {
-                const hasLog = logs.some(log => {
+                const hasLog = currentLogs.some(log => {
                   const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
                   return isSameDay(logDate, d) && log.locationKey === locKey;
                 });
@@ -397,7 +402,7 @@
               <!DOCTYPE html>
               <html>
               <head>
-                <title>GI Unit Daily Checklist - Audit Logs</title>
+                <title>${selectedUnit} - Audit Logs</title>
                 <style>
                   body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; }
                   h1 { color: #1d4ed8; text-align: center; margin-bottom: 5px; font-size: 24px; }
@@ -412,8 +417,8 @@
                 </style>
               </head>
               <body>
-                <h1>GI Unit Daily Checklist - Shift Audit Report</h1>
-                <div class="subtitle">Generated on ${new Date().toLocaleString()}</div>
+                <h1>${selectedUnit} - Shift Audit Report</h1>
+                <div class="subtitle">GI Unit Daily Checklist &bull; Generated on ${new Date().toLocaleString()}</div>
                 
                 ${complianceHtml}
 
@@ -431,7 +436,7 @@
                   <tbody>
             `;
 
-            logs.forEach(log => {
+            currentLogs.forEach(log => {
               const dateObj = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
               const dateStr = dateObj.toLocaleDateString();
               const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -499,9 +504,12 @@
               {/* Top Header */}
               <header className="bg-blue-700 text-white sticky top-0 z-20 p-4 shadow-md">
                 <div className="max-w-md mx-auto flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Activity className="w-6 h-6 text-blue-200" />
-                    <h1 className="font-bold text-lg tracking-tight">GI Unit Daily Checklist</h1>
+                    <div>
+                      <h1 className="font-extrabold text-lg tracking-tight leading-tight">{selectedUnit}</h1>
+                      <div className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">GI Unit Checklist</div>
+                    </div>
                   </div>
                   {view === 'check' && (
                     <button onClick={() => setView('select-location')} className="p-2 hover:bg-blue-600 rounded-full transition-colors">
@@ -521,6 +529,22 @@
 
                 {view === 'home' && (
                   <div className="space-y-6 pt-2">
+                    {/* Unit Toggle Switch */}
+                    <div className="bg-white p-1.5 rounded-2xl border border-gray-200 flex shadow-sm">
+                      <button 
+                        onClick={() => setSelectedUnit('Lady Sobell')}
+                        className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Lady Sobell' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        Lady Sobell
+                      </button>
+                      <button 
+                        onClick={() => setSelectedUnit('Endoscopy Suite')}
+                        className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Endoscopy Suite' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        Endoscopy Suite
+                      </button>
+                    </div>
+
                     <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
                        <div className="relative z-10">
                         <h2 className="text-3xl font-extrabold mb-1 tracking-tight">Shift Hub</h2>
@@ -743,7 +767,7 @@
                       <h2 className="font-extrabold text-xl text-gray-800">
                         {historyTab === 'logs' ? 'Daily Audits' : '7-Day Tracker'}
                       </h2>
-                      {logs.length > 0 && (
+                      {currentLogs.length > 0 && (
                         <button 
                           onClick={exportToPDF}
                           className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
@@ -776,7 +800,7 @@
                                     {locData.title.replace('Area', '').replace('Room', 'Rm')}
                                   </td>
                                   {last7Days.map((d, i) => {
-                                    const isDone = logs.some(log => {
+                                    const isDone = currentLogs.some(log => {
                                       const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
                                       return isSameDay(logDate, d) && log.locationKey === locKey;
                                     });
@@ -803,13 +827,13 @@
                     )}
                     
                     {/* View: RAW LOGS */}
-                    {historyTab === 'logs' && logs.length === 0 ? (
+                    {historyTab === 'logs' && currentLogs.length === 0 ? (
                       <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200">
                         <ListChecks className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p className="font-semibold">No audits recorded yet.</p>
+                        <p className="font-semibold">No audits recorded for {selectedUnit} yet.</p>
                       </div>
                     ) : historyTab === 'logs' && (
-                      logs.map((log) => (
+                      currentLogs.map((log) => (
                         <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                           <div className="flex justify-between items-start">
                             <div className="space-y-2">
