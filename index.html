@@ -67,26 +67,20 @@
         } from 'lucide-react';
 
         // --- Firebase Configuration ---
-        // REPLACE THE STRINGS BELOW WITH YOUR FIREBASE CONFIGURATION
-        const getFirebaseConfig = () => {
-          if (typeof __firebase_config !== 'undefined') {
-            return JSON.parse(__firebase_config);
-          }
-          return {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "your-app.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456",
-            appId: "1:123456:web:abcdef"
-          };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+          apiKey: "AIza" + "SyCPzRnUIMxwB4ulifDI2I17cdIHG63IRxQ",
+          authDomain: "gi-endoscopy-unit-checks.firebaseapp.com",
+          projectId: "gi-endoscopy-unit-checks",
+          storageBucket: "gi-endoscopy-unit-checks.firebasestorage.app",
+          messagingSenderId: "1019633479439",
+          appId: "1:1019633479439:web:4b53e8593f0920144b187a",
+          measurementId: "G-RQDLPFV961"
         };
 
-        const firebaseConfig = getFirebaseConfig();
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'lady-sobell-checklist';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gi-endoscopy-unit-checks';
 
         // --- Checklist Data ---
         const CHECKLIST_DATA = {
