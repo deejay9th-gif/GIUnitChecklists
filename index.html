@@ -69,7 +69,8 @@
           Trash2,
           Lock,
           CalendarX,
-          Ban
+          Ban,
+          BarChart3
         } from 'lucide-react';
 
         // --- Configuration ---
@@ -262,7 +263,9 @@
                    d1.getDate() === d2.getDate();
           };
 
-          const todayLogs = currentLogs.filter(log => isSameDay(log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp), new Date()));
+          const getLogDate = (log) => log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+
+          const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
           const last7Days = Array.from({length: 7}, (_, i) => {
@@ -270,6 +273,28 @@
             d.setDate(d.getDate() - i);
             return d;
           });
+
+          // Calculate Data for Weekly Performance Graph
+          const weeklyChartData = last7Days.map(d => {
+            const dayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), d));
+            const isUnitClosed = dayLogs.some(log => log.type === 'unit_closure');
+            let completed = 0;
+            const totalAreas = Object.keys(CHECKLIST_DATA).length;
+
+            if (!isUnitClosed) {
+                Object.keys(CHECKLIST_DATA).forEach(locKey => {
+                    if (dayLogs.some(log => log.locationKey === locKey)) completed++;
+                });
+            }
+
+            return {
+                date: d,
+                isUnitClosed,
+                percentage: isUnitClosed ? 0 : Math.round((completed / totalAreas) * 100),
+                completed,
+                totalAreas
+            };
+          }).reverse(); // Reverse so left-to-right is oldest-to-newest
 
           // Dynamic Task Fetching (allows filtering based on selected Unit)
           const getDailyTasks = (locKey, unit) => {
@@ -425,25 +450,31 @@
               setError("Please allow pop-ups to generate the PDF report.");
               return;
             }
+            
+            // Format dates for the report header
+            const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
             let complianceHtml = `
               <div style="margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
-                <h2 style="color: #334155; font-size: 16px; margin-bottom: 15px; font-family: sans-serif;">7-Day Compliance Summary (${selectedUnit})</h2>
+                <h2 style="color: #334155; font-size: 16px; margin-bottom: 15px; font-family: sans-serif;">Weekly Matrix (Area Breakdown)</h2>
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: sans-serif;">
                   <thead>
                     <tr>
                       <th style="width: 25%; text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">Location</th>
             `;
-            last7Days.reverse().forEach(d => {
+            
+            const reversedDays = [...last7Days].reverse();
+            reversedDays.forEach(d => {
               complianceHtml += `<th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">${d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</th>`;
             });
             complianceHtml += `</tr></thead><tbody>`;
 
             Object.entries(CHECKLIST_DATA).forEach(([locKey, locData]) => {
               complianceHtml += `<tr><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><strong>${locData.title}</strong></td>`;
-              last7Days.forEach(d => {
+              reversedDays.forEach(d => {
                 const closureLog = currentLogs.find(log => {
-                  const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+                  const logDate = getLogDate(log);
                   return (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(logDate, d);
                 });
 
@@ -453,7 +484,7 @@
                 }
 
                 const hasLog = currentLogs.some(log => {
-                  const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+                  const logDate = getLogDate(log);
                   return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
                 });
                 
@@ -465,19 +496,18 @@
               });
               complianceHtml += `</tr>`;
             });
-            last7Days.reverse(); 
             complianceHtml += `</tbody></table></div>`;
-
 
             let html = `
               <!DOCTYPE html>
               <html>
               <head>
-                <title>${selectedUnit} - Audit Logs</title>
+                <title>${selectedUnit} - Weekly Audit Report</title>
                 <style>
                   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
-                  h1 { color: #1e40af; text-align: center; margin-bottom: 5px; font-size: 26px; font-weight: 800; }
-                  .subtitle { text-align: center; color: #64748b; margin-bottom: 40px; font-size: 14px; font-weight: 500; }
+                  h1 { color: #1e40af; text-align: center; margin-bottom: 5px; font-size: 26px; font-weight: 800; text-transform: uppercase; }
+                  .subtitle { text-align: center; color: #64748b; margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+                  .date-range { text-align: center; color: #1e293b; margin-bottom: 40px; font-size: 16px; font-weight: 700; background-color: #f1f5f9; padding: 8px; border-radius: 8px; width: fit-content; margin-left: auto; margin-right: auto; }
                   .logs-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
                   .logs-table th, .logs-table td { border-bottom: 1px solid #e2e8f0; padding: 14px 10px; text-align: left; vertical-align: top; }
                   .logs-table th { background-color: #f8fafc; color: #475569; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; border-top: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1; }
@@ -491,12 +521,13 @@
                 </style>
               </head>
               <body>
-                <h1>${selectedUnit} - Shift Audit Report</h1>
-                <div class="subtitle">GI Unit Daily Checklist &bull; Generated on ${new Date().toLocaleString()}</div>
+                <h1>Weekly Audit Report</h1>
+                <div class="subtitle">${selectedUnit} - GI Unit Daily Checklist</div>
+                <div class="date-range">Report Period: ${oldestDate} &mdash; ${newestDate}</div>
                 
                 ${complianceHtml}
 
-                <h2 style="color: #334155; font-size: 18px; margin-top: 40px; margin-bottom: 5px;">Detailed Audit Logs</h2>
+                <h2 style="color: #334155; font-size: 18px; margin-top: 40px; margin-bottom: 5px;">Detailed Log Trail</h2>
                 <table class="logs-table">
                   <thead>
                     <tr>
@@ -511,13 +542,11 @@
             `;
 
             currentLogs.forEach(log => {
-              const dateObj = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+              const dateObj = getLogDate(log);
               const dateStr = dateObj.toLocaleDateString();
               const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
               
-              const commentText = log.comment ? `<em>${log.comment}</em>` : '<span style="color: #94a3b8;">None</span>';
-
               // Handle Unit or Room Closures
               if (log.type === 'unit_closure' || log.type === 'room_closure') {
                 const isUnit = log.type === 'unit_closure';
@@ -999,13 +1028,13 @@
                          onClick={() => setHistoryTab('compliance')}
                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'compliance' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
                        >
-                         Compliance
+                         Weekly Report
                        </button>
                     </div>
 
                     <div className="flex items-center justify-between px-2 pt-2">
                       <h2 className="font-extrabold text-xl text-gray-800">
-                        {historyTab === 'logs' ? 'Daily Audits' : '7-Day Tracker'}
+                        {historyTab === 'logs' ? 'Daily Audits' : 'Weekly Overview'}
                       </h2>
                       {currentLogs.length > 0 && (
                         <button 
@@ -1018,9 +1047,43 @@
                       )}
                     </div>
 
-                    {/* View: COMPLIANCE MATRIX */}
+                    {/* View: COMPLIANCE MATRIX AND GRAPH */}
                     {historyTab === 'compliance' && (
-                      <div className="space-y-3 pb-4">
+                      <div className="space-y-4 pb-4">
+                        
+                        {/* CSS Bar Chart for Weekly Performance */}
+                        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                          <div className="flex items-center gap-2 mb-4">
+                            <BarChart3 className="w-5 h-5 text-blue-600" />
+                            <h3 className="font-extrabold text-gray-800">Unit Completion Rate</h3>
+                          </div>
+                          
+                          <div className="flex items-end justify-between h-32 gap-2 mt-2">
+                            {weeklyChartData.map((data, i) => (
+                              <div key={i} className="flex flex-col items-center flex-1 gap-2">
+                                <div className="w-full relative flex items-end justify-center h-24 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+                                  {data.isUnitClosed ? (
+                                    <div className="absolute inset-0 bg-gray-100 flex items-center justify-center flex-col">
+                                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest -rotate-90">Closed</span>
+                                    </div>
+                                  ) : (
+                                    <div 
+                                      className={`w-full rounded-t-lg transition-all duration-500 ${data.percentage === 100 ? 'bg-green-500' : data.percentage >= 50 ? 'bg-orange-400' : 'bg-red-500'}`}
+                                      style={{ height: `${data.percentage}%` }}
+                                    ></div>
+                                  )}
+                                </div>
+                                <span className={`text-[10px] font-bold ${i === 6 ? 'text-blue-700' : 'text-gray-500'}`}>
+                                  {i === 6 ? 'TDY' : data.date.toLocaleDateString(undefined, {weekday: 'short'}).substring(0, 2)}
+                                </span>
+                                {!data.isUnitClosed && <span className="text-[9px] font-black text-gray-700">{data.percentage}%</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Area Breakdown Cards */}
+                        <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Area Breakdown</h3>
                         {Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => {
                           const chronologicalDays = [...last7Days].reverse();
                           let doneCount = 0;
@@ -1028,7 +1091,7 @@
 
                           const dayStatuses = chronologicalDays.map((d) => {
                             const closureLog = currentLogs.find(log => {
-                              const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+                              const logDate = getLogDate(log);
                               return (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(logDate, d);
                             });
 
@@ -1038,7 +1101,7 @@
                             }
 
                             const isDone = currentLogs.some(log => {
-                              const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+                              const logDate = getLogDate(log);
                               return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
                             });
 
@@ -1058,7 +1121,7 @@
                               <div className="flex justify-between items-end mb-4">
                                 <div>
                                   <h3 className="font-extrabold text-gray-800 text-lg leading-none">{locData.title.replace('Area', '').replace('Room', 'Rm')}</h3>
-                                  <div className={`text-xs font-bold tracking-wide mt-1.5 ${complianceRate >= 80 ? 'text-green-600' : complianceRate >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
+                                  <div className={`text-xs font-bold tracking-wide mt-1.5 ${requiredDays === 0 ? 'text-gray-500' : complianceRate >= 80 ? 'text-green-600' : complianceRate >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
                                     {requiredDays === 0 ? 'Closed all week' : `${complianceRate}% Compliant`}
                                   </div>
                                 </div>
