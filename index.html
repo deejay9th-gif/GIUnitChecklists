@@ -283,7 +283,16 @@
 
             if (!isUnitClosed) {
                 Object.keys(CHECKLIST_DATA).forEach(locKey => {
-                    if (dayLogs.some(log => log.locationKey === locKey)) completed++;
+                    const areaLog = dayLogs.find(log => log.locationKey === locKey);
+                    if (areaLog) {
+                        if (areaLog.type === 'room_closure') {
+                            completed++; // Closed rooms count as "completed" so it doesn't penalize.
+                        } else {
+                            const dailyKeys = Object.keys(areaLog.checklist || {}).filter(k => k.startsWith('daily_'));
+                            const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => areaLog.checklist[k]);
+                            if (isAllDone) completed++;
+                        }
+                    }
                 });
             }
 
@@ -483,13 +492,19 @@
                   return;
                 }
 
-                const hasLog = currentLogs.some(log => {
+                const standardLog = currentLogs.find(log => {
                   const logDate = getLogDate(log);
                   return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
                 });
                 
-                if (hasLog) {
-                  complianceHtml += `<td style="color: #15803d; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f0fdf4;">Done</td>`;
+                if (standardLog) {
+                  const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
+                  const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => standardLog.checklist[k]);
+                  if (isAllDone) {
+                    complianceHtml += `<td style="color: #15803d; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f0fdf4;">Done</td>`;
+                  } else {
+                    complianceHtml += `<td style="color: #b45309; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fffbeb;">Incomplete</td>`;
+                  }
                 } else {
                   complianceHtml += `<td style="color: #b91c1c; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fef2f2;">Missing</td>`;
                 }
@@ -1100,14 +1115,21 @@
                               return { date: d, status: 'closed' };
                             }
 
-                            const isDone = currentLogs.some(log => {
+                            const standardLog = currentLogs.find(log => {
                               const logDate = getLogDate(log);
                               return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
                             });
 
-                            if (isDone) {
-                              doneCount++;
-                              return { date: d, status: 'done' };
+                            if (standardLog) {
+                              const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
+                              const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => standardLog.checklist[k]);
+                              
+                              if (isAllDone) {
+                                doneCount++;
+                                return { date: d, status: 'done' };
+                              } else {
+                                return { date: d, status: 'incomplete' };
+                              }
                             }
 
                             return { date: d, status: 'missing' };
@@ -1138,11 +1160,13 @@
                                       <div 
                                         className={`w-full h-10 rounded-xl flex items-center justify-center transition-all ${
                                           ds.status === 'done' ? 'bg-green-500 text-white shadow-[0_2px_10px_-3px_rgba(34,197,94,0.5)]' :
+                                          ds.status === 'incomplete' ? 'bg-orange-400 text-white shadow-[0_2px_10px_-3px_rgba(251,146,60,0.5)]' :
                                           ds.status === 'closed' ? 'bg-gray-100 text-gray-400' :
                                           'bg-red-50 text-red-500 border border-red-100'
                                         }`}
                                       >
                                         {ds.status === 'done' && <CheckCircle2 className="w-5 h-5" />}
+                                        {ds.status === 'incomplete' && <AlertCircle className="w-5 h-5" />}
                                         {ds.status === 'closed' && <Ban className="w-4 h-4 opacity-40" />}
                                         {ds.status === 'missing' && <XCircle className="w-5 h-5" />}
                                       </div>
