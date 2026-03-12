@@ -625,9 +625,10 @@
                   return;
                 }
 
+                // Check for old legacy logs (no type) OR explicit standard_audits
                 const standardLog = currentLogs.find(log => {
                   const logDate = getLogDate(log);
-                  return log.type === 'standard_audit' && isSameDay(logDate, d) && log.locationKey === locKey;
+                  return (!log.type || log.type === 'standard_audit') && isSameDay(logDate, d) && log.locationKey === locKey;
                 });
                 
                 if (standardLog) {
@@ -744,7 +745,7 @@
                 return;
               }
 
-              // Handle Standard Audits
+              // Handle Standard Audits (and fallback for older logs lacking the 'type' field)
               const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
               const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
               const dailyTotal = dailyKeys.length;
@@ -1354,7 +1355,7 @@
 
                             const standardLog = currentLogs.find(log => {
                               const logDate = getLogDate(log);
-                              return log.type === 'standard_audit' && isSameDay(logDate, d) && log.locationKey === locKey;
+                              return (!log.type || log.type === 'standard_audit') && isSameDay(logDate, d) && log.locationKey === locKey;
                             });
 
                             if (standardLog) {
