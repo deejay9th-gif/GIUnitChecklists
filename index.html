@@ -70,7 +70,8 @@
           Lock,
           CalendarX,
           Ban,
-          BarChart3
+          BarChart3,
+          Stethoscope
         } from 'lucide-react';
 
         // --- Configuration ---
@@ -136,7 +137,7 @@
               "Clean entonox cylinder",
               "Stack/screen – clean/restock at the end of list",
               "Clean sharps bins holders",
-              "Dust X-Ray machine" // Added to Room 1
+              "Dust X-Ray machine"
             ],
             weekly: [
               "IV trolleys – full clean – inside",
@@ -163,7 +164,6 @@
               "Clean Entonox and O2 cylinder",
               "Stack/screen – clean/restock at the end of list",
               "Clean sharps bins holders"
-              // Dust X-Ray machine removed from Room 2
             ],
             weekly: [
               "IV trolleys – full clean – inside",
@@ -191,6 +191,100 @@
             ]
           }
         };
+
+        // --- Special Trolley Data ---
+        const BLEED_TROLLEY_DATA = [
+          {
+            compartment: "Top Compartment",
+            items: [
+              { name: "Sterile water", qty: 3, hasExpiry: false },
+              { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" },
+              { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" },
+              { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" },
+              { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" },
+              { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" },
+              { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" },
+              { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" },
+              { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" },
+              { name: "Overtube (30 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" },
+              { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }
+            ]
+          },
+          {
+            compartment: "First Drawer",
+            items: [
+              { name: "Spray Nozzle", qty: 6, hasExpiry: false },
+              { name: "CLO test plate", qty: 3, hasExpiry: true, defaultExpiry: "2027-02" },
+              { name: "CLO reagent", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" },
+              { name: "C/S specimen pot", qty: 1, hasExpiry: false },
+              { name: "Sodium Chloride 10 ml", qty: 5, hasExpiry: true, defaultExpiry: "2029-07" },
+              { name: "Xylocaine 10%", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" },
+              { name: "Infacol", qty: 1, hasExpiry: true, defaultExpiry: "2029-02" },
+              { name: "Sterile gauze swab", qty: 1, hasExpiry: true, defaultExpiry: "2029-09" },
+              { name: "Sterile scissor", qty: 2, hasExpiry: true, defaultExpiry: "2026-04" },
+              { name: "Optilube gel", qty: 15, hasExpiry: true, defaultExpiry: "2030-03" },
+              { name: "Small mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-04" },
+              { name: "Large mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-10" },
+              { name: "Needle 18g (red)", qty: 4, hasExpiry: true, defaultExpiry: "2030-04" },
+              { name: "Needle 21g (green)", qty: 4, hasExpiry: true, defaultExpiry: "2028-02" }
+            ]
+          },
+          {
+            compartment: "Second Drawer",
+            items: [
+              { name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" },
+              { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" },
+              { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" },
+              { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" },
+              { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" },
+              { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" },
+              { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" },
+              { name: "Inco pad", qty: 4, hasExpiry: false },
+              { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" },
+              { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }
+            ]
+          },
+          {
+            compartment: "Third Drawer",
+            items: [
+              { name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" },
+              { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" },
+              { name: "Suction liner (blue)", qty: 2, hasExpiry: false },
+              { name: "Yankauer sucker", qty: 2, hasExpiry: false },
+              { name: "Suction connecting tube", qty: 3, hasExpiry: false },
+              { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }
+            ]
+          },
+          {
+            compartment: "Fourth Drawer",
+            items: [
+              { name: "XL clip (20mm)", qty: 3, hasExpiry: true, defaultExpiry: "2026-06" },
+              { name: "Large clip (16mm)", qty: 5, hasExpiry: true, defaultExpiry: "2028-07" },
+              { name: "Small clip (11mm)", qty: 4, hasExpiry: true, defaultExpiry: "2028-08" },
+              { name: "Biopsy forceps", qty: 2, hasExpiry: true, defaultExpiry: "2028-06" },
+              { name: "Biopsy forceps (Paediatric)", qty: 1, hasExpiry: true, defaultExpiry: "2027-09" },
+              { name: "Injector (25g)", qty: 3, hasExpiry: true, defaultExpiry: "2027-12" },
+              { name: "Injector (23g)", qty: 2, hasExpiry: true, defaultExpiry: "2026-11" }
+            ]
+          },
+          {
+            compartment: "Fifth Drawer",
+            items: [
+              { name: "Snare (10 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-05" },
+              { name: "Snare (15 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-08" },
+              { name: "Snare (25mm)", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" },
+              { name: "Snare (33mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-01" },
+              { name: "Grasping forceps (8.5mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" },
+              { name: "Purastat nozzle", qty: 3, hasExpiry: true, defaultExpiry: "2028-04" },
+              { name: "Roth net", qty: 2, hasExpiry: true, defaultExpiry: "2028-04" },
+              { name: "Talon grasping device", qty: 2, hasExpiry: true, defaultExpiry: "2027-12" },
+              { name: "Distal cap attachment (11.35)", qty: 2, hasExpiry: true, defaultExpiry: "2026-12" },
+              { name: "Hood", qty: 2, hasExpiry: true, defaultExpiry: "2025-10" },
+              { name: "Variceal Bander", qty: 2, hasExpiry: true, defaultExpiry: "2026-08" },
+              { name: "IPAD", qty: 1, hasExpiry: false }
+            ]
+          }
+        ];
 
         const App = () => {
           const [user, setUser] = useState(null);
@@ -274,7 +368,7 @@
             return d;
           });
 
-          // Calculate Data for Weekly Performance Graph
+          // Calculate Data for Weekly Performance Graph (Only standard daily areas)
           const weeklyChartData = last7Days.map(d => {
             const dayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), d));
             const isUnitClosed = dayLogs.some(log => log.type === 'unit_closure');
@@ -283,7 +377,7 @@
 
             if (!isUnitClosed) {
                 Object.keys(CHECKLIST_DATA).forEach(locKey => {
-                    const areaLog = dayLogs.find(log => log.locationKey === locKey);
+                    const areaLog = dayLogs.find(log => log.locationKey === locKey && log.type !== 'trolley_audit');
                     if (areaLog) {
                         if (areaLog.type === 'room_closure') {
                             completed++; // Closed rooms count as "completed" so it doesn't penalize.
@@ -303,14 +397,16 @@
                 completed,
                 totalAreas
             };
-          }).reverse(); // Reverse so left-to-right is oldest-to-newest
+          }).reverse(); 
 
-          // Dynamic Task Fetching (allows filtering based on selected Unit)
+          // Dynamic Task Fetching 
           const getDailyTasks = (locKey, unit) => {
             let tasks = CHECKLIST_DATA[locKey].daily;
-            // X-Ray machine is strictly for Lady Sobell Room 1
             if (locKey === 'room1' && unit !== 'Lady Sobell') {
               tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
+            }
+            if (locKey === 'recovery' && unit !== 'Lady Sobell') {
+              tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
             }
             return tasks;
           };
@@ -319,22 +415,62 @@
             return CHECKLIST_DATA[locKey].weekly;
           };
 
+          // Checks if an expiry date string (YYYY-MM) is within 1 month of the audit date
+          const checkExpiryWarning = (expiryStr, auditDateStr) => {
+            if (!expiryStr) return false; 
+            const [expYear, expMonth] = expiryStr.split('-');
+            const expDate = new Date(parseInt(expYear), parseInt(expMonth) - 1, 1); 
+            
+            const [audYear, audMonth, audDay] = auditDateStr.split('-');
+            const audDate = new Date(parseInt(audYear), parseInt(audMonth) - 1, parseInt(audDay));
+            
+            const thresholdDate = new Date(audDate);
+            thresholdDate.setMonth(thresholdDate.getMonth() + 1);
+            
+            return expDate <= thresholdDate;
+          };
+
           // --- Handlers ---
           const startChecklist = (key) => {
-            const initialChecklist = {};
-            getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
-            getWeeklyTasks(key).forEach(item => initialChecklist[`weekly_${item}`] = false);
-            
             setSelectedLocKey(key);
-            setChecklist(initialChecklist);
             setComment('');
-            setIsRoomClosed(false); // Reset the toggle
-            setAuditDate(new Date().toISOString().split('T')[0]); // Reset date to today
+            setIsRoomClosed(false); 
+            setAuditDate(new Date().toISOString().split('T')[0]); 
+
+            if (key === 'bleed_trolley') {
+              const initialTrolley = {};
+              BLEED_TROLLEY_DATA.forEach(comp => {
+                comp.items.forEach(item => {
+                  initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' };
+                });
+              });
+              setChecklist(initialTrolley);
+            } else {
+              const initialChecklist = {};
+              getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
+              getWeeklyTasks(key).forEach(item => initialChecklist[`weekly_${item}`] = false);
+              setChecklist(initialChecklist);
+            }
+            
             setView('check');
           };
 
           const handleToggle = (itemKey) => {
             setChecklist(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
+          };
+
+          const handleTrolleyCheck = (name, checked) => {
+            setChecklist(prev => ({
+              ...prev,
+              [name]: { ...prev[name], checked }
+            }));
+          };
+
+          const handleTrolleyExpiry = (name, expiry) => {
+            setChecklist(prev => ({
+              ...prev,
+              [name]: { ...prev[name], expiry }
+            }));
           };
 
           const handleDelete = async (logId) => {
@@ -366,12 +502,10 @@
             try {
               const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
               
-              // Parse the selected audit date
               const [year, month, day] = auditDate.split('-');
               const targetTimestamp = new Date();
               targetTimestamp.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
               
-              // If past date, set time to noon to avoid timezone shifting
               const isToday = auditDate === new Date().toISOString().split('T')[0];
               if (!isToday) {
                 targetTimestamp.setHours(12, 0, 0, 0);
@@ -380,15 +514,16 @@
               const payload = {
                 initials: initials.toUpperCase(),
                 locationKey: selectedLocKey,
-                locationTitle: CHECKLIST_DATA[selectedLocKey].title,
+                locationTitle: selectedLocKey === 'bleed_trolley' ? "GI Bleed Emergency Trolley" : CHECKLIST_DATA[selectedLocKey].title,
                 unit: selectedUnit,
                 comment: comment.trim(),
                 timestamp: targetTimestamp,
                 userId: user.uid,
-                isLateEntry: !isToday
+                isLateEntry: !isToday,
+                type: selectedLocKey === 'bleed_trolley' ? 'trolley_audit' : 'standard_audit'
               };
 
-              if (isRoomClosed) {
+              if (isRoomClosed && selectedLocKey !== 'bleed_trolley') {
                 payload.type = 'room_closure';
               } else {
                 payload.checklist = checklist;
@@ -398,7 +533,7 @@
 
               setInitials('');
               setComment('');
-              setHistoryTab('compliance');
+              setHistoryTab(selectedLocKey === 'bleed_trolley' ? 'logs' : 'compliance');
               setView('history');
             } catch (err) {
               console.error("Submission error:", err);
@@ -416,7 +551,6 @@
             setError(null);
 
             try {
-              // Parse the selected date and set it to Noon to avoid timezone date shifts
               const [year, month, day] = closureDate.split('-');
               const targetTimestamp = new Date(year, month - 1, day, 12, 0, 0);
               const isToday = closureDate === new Date().toISOString().split('T')[0];
@@ -460,7 +594,6 @@
               return;
             }
             
-            // Format dates for the report header
             const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
             const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -494,7 +627,7 @@
 
                 const standardLog = currentLogs.find(log => {
                   const logDate = getLogDate(log);
-                  return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
+                  return log.type === 'standard_audit' && isSameDay(logDate, d) && log.locationKey === locKey;
                 });
                 
                 if (standardLog) {
@@ -530,6 +663,7 @@
                   .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
                   .bg-green { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
                   .bg-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+                  .bg-orange { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
                   .bg-gray { background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
                   .date-cell { white-space: nowrap; width: 12%; }
                   .details-block { display: flex; flex-direction: column; gap: 6px; }
@@ -560,9 +694,9 @@
               const dateObj = getLogDate(log);
               const dateStr = dateObj.toLocaleDateString();
               const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const dateLogicStr = dateObj.toISOString().split('T')[0];
               const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
               
-              // Handle Unit or Room Closures
               if (log.type === 'unit_closure' || log.type === 'room_closure') {
                 const isUnit = log.type === 'unit_closure';
                 const statusBadge = `<span class="badge bg-gray">${isUnit ? 'Not Running' : 'Room Closed'}</span>`;
@@ -580,6 +714,36 @@
                 return;
               }
 
+              if (log.type === 'trolley_audit') {
+                const allItems = Object.keys(log.checklist || {});
+                const missingItems = allItems.filter(k => !log.checklist[k].checked);
+                const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                
+                const statusBadge = missingItems.length === 0 
+                  ? `<span class="badge bg-green">Fully Stocked</span>` 
+                  : `<span class="badge bg-red">Missing (${missingItems.length})</span>`;
+
+                let detailsLines = [];
+                if (missingItems.length > 0) detailsLines.push(`<div style="color: #b91c1c;"><strong>Missing:</strong> ${missingItems.join(', ')}</div>`);
+                if (expiringItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Expiring Soon/Expired:</strong> ${expiringItems.join(', ')}</div>`);
+                if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                
+                const finalDetails = detailsLines.length > 0 
+                  ? `<div class="details-block">${detailsLines.join('')}</div>`
+                  : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date. No notes.</span>`;
+
+                html += `
+                  <tr>
+                    <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                    <td><strong>${log.locationTitle}</strong></td>
+                    <td>${log.initials}</td>
+                    <td>${statusBadge}</td>
+                    <td>${finalDetails}</td>
+                  </tr>
+                `;
+                return;
+              }
+
               // Handle Standard Audits
               const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
               const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
@@ -589,12 +753,12 @@
 
               const statusBadge = isAllDailyDone 
                 ? `<span class="badge bg-green">Completed</span>`
-                : `<span class="badge bg-red">Incomplete (${dailyDone}/${dailyTotal})</span>`;
+                : `<span class="badge bg-orange">Incomplete (${dailyDone}/${dailyTotal})</span>`;
 
               let detailsLines = [];
               
               if (!isAllDailyDone && missingDailyItems.length > 0) {
-                detailsLines.push(`<div style="color: #b91c1c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
+                detailsLines.push(`<div style="color: #c2410c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
               }
 
               const weeklyDoneList = Object.entries(log.checklist || {})
@@ -673,12 +837,7 @@
                       <div className="text-[10px] text-blue-200 uppercase tracking-widest font-bold">GI Unit Checklist</div>
                     </div>
                   </div>
-                  {view === 'check' && (
-                    <button onClick={() => setView('select-location')} className="p-2 hover:bg-blue-600 rounded-full transition-colors">
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
-                  )}
-                  {view === 'mark-closed' && (
+                  {(view === 'check' || view === 'mark-closed') && (
                     <button onClick={() => setView('select-location')} className="p-2 hover:bg-blue-600 rounded-full transition-colors">
                       <ArrowLeft className="w-5 h-5" />
                     </button>
@@ -767,7 +926,7 @@
                     <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
                     <div className="space-y-3">
                       {Object.entries(CHECKLIST_DATA).map(([key, data]) => {
-                        const roomLog = todayLogs.find(l => l.locationKey === key);
+                        const roomLog = todayLogs.find(l => l.locationKey === key && l.type !== 'trolley_audit');
                         const isCompleted = isUnitClosedToday || !!roomLog;
                         const isClosed = isUnitClosedToday || (roomLog?.type === 'room_closure');
                         
@@ -813,6 +972,27 @@
                       })}
                     </div>
 
+                    {selectedUnit === 'Lady Sobell' && (
+                      <div className="pt-6 border-t border-gray-200 mt-6 space-y-3">
+                         <h2 className="font-extrabold text-xl px-1 text-gray-800">Specialist Checklists</h2>
+                         <button 
+                           onClick={() => startChecklist('bleed_trolley')}
+                           className="w-full text-left p-5 shadow-sm border border-gray-100 rounded-2xl flex items-center justify-between transition-all bg-white hover:border-red-400 hover:shadow-md group"
+                         >
+                           <div className="flex items-center gap-4">
+                              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl group-hover:bg-red-100 transition-colors">
+                                 <Stethoscope className="w-5 h-5" />
+                              </div>
+                              <div className="text-left">
+                                <div className="font-bold text-lg text-red-900 leading-none mb-1">GI Bleed Trolley</div>
+                                <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Mondays / PRN Check</div>
+                              </div>
+                           </div>
+                           <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-red-500" />
+                         </button>
+                      </div>
+                    )}
+
                     <div className="pt-6 border-t border-gray-200 mt-6">
                       <button
                         onClick={() => setView('mark-closed')}
@@ -828,29 +1008,33 @@
 
                 {view === 'check' && (
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="bg-blue-50 p-5 rounded-3xl border border-blue-100 flex items-center justify-between shadow-sm">
+                    <div className={`${selectedLocKey === 'bleed_trolley' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm`}>
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-blue-700 tracking-widest">Auditing Location ({selectedUnit})</span>
-                        <div className="font-bold text-blue-900 text-lg">{CHECKLIST_DATA[selectedLocKey].title}</div>
+                        <span className={`text-[10px] uppercase font-bold tracking-widest ${selectedLocKey === 'bleed_trolley' ? 'text-red-700' : 'text-blue-700'}`}>Auditing Location ({selectedUnit})</span>
+                        <div className={`font-bold text-lg ${selectedLocKey === 'bleed_trolley' ? 'text-red-900' : 'text-blue-900'}`}>
+                          {selectedLocKey === 'bleed_trolley' ? 'GI Bleed Emergency Trolley' : CHECKLIST_DATA[selectedLocKey].title}
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex bg-gray-100 p-1 rounded-xl w-full">
-                       <button 
-                         type="button"
-                         onClick={() => setIsRoomClosed(false)}
-                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRoomClosed ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-                       >
-                         Standard Audit
-                       </button>
-                       <button 
-                         type="button"
-                         onClick={() => setIsRoomClosed(true)}
-                         className={`flex-1 flex items-center justify-center gap-1 py-2 text-sm font-bold rounded-lg transition-all ${isRoomClosed ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                       >
-                         <Ban className="w-4 h-4" /> Room Closed
-                       </button>
-                    </div>
+                    {selectedLocKey !== 'bleed_trolley' && (
+                      <div className="flex bg-gray-100 p-1 rounded-xl w-full">
+                         <button 
+                           type="button"
+                           onClick={() => setIsRoomClosed(false)}
+                           className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRoomClosed ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+                         >
+                           Standard Audit
+                         </button>
+                         <button 
+                           type="button"
+                           onClick={() => setIsRoomClosed(true)}
+                           className={`flex-1 flex items-center justify-center gap-1 py-2 text-sm font-bold rounded-lg transition-all ${isRoomClosed ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
+                         >
+                           <Ban className="w-4 h-4" /> Room Closed
+                         </button>
+                      </div>
+                    )}
 
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
                       <label className="block">
@@ -876,80 +1060,137 @@
                           className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all p-4 bg-gray-50 border font-bold text-gray-800"
                         />
                       </label>
+                    </div>
 
-                      {!isRoomClosed && (
-                        <div className="space-y-8 pt-4 animate-in fade-in duration-300 border-t border-gray-100">
-                          <div className="space-y-3">
-                            <h3 className="text-xs uppercase font-extrabold text-gray-400 tracking-widest px-1">Daily Mandatory</h3>
-                            {getDailyTasks(selectedLocKey, selectedUnit).map((item) => (
-                              <label 
-                                key={item} 
-                                className={`flex items-start p-4 rounded-2xl border transition-all cursor-pointer ${
-                                  checklist[`daily_${item}`] ? 'bg-green-50 border-green-200 shadow-inner' : 'bg-white border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
-                                <input 
-                                  type="checkbox" 
-                                  className="hidden"
-                                  checked={checklist[`daily_${item}`]}
-                                  onChange={() => handleToggle(`daily_${item}`)}
-                                />
-                                <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
-                                  checklist[`daily_${item}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                                }`}>
-                                  {checklist[`daily_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
-                                </div>
-                                <span className={`text-sm leading-snug ${checklist[`daily_${item}`] ? 'font-bold text-green-900' : 'font-semibold text-gray-700'}`}>{item}</span>
-                              </label>
-                            ))}
-                          </div>
-
-                          {getWeeklyTasks(selectedLocKey).length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between px-1">
-                                <h3 className="text-xs uppercase font-extrabold text-blue-400 tracking-widest">Weekly Tasks</h3>
-                                {new Date(auditDate).getDay() !== 1 && (
-                                  <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
-                                    Mondays Only
-                                  </span>
-                                )}
+                    {!isRoomClosed && selectedLocKey !== 'bleed_trolley' && (
+                      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-8 animate-in fade-in duration-300">
+                        <div className="space-y-3">
+                          <h3 className="text-xs uppercase font-extrabold text-gray-400 tracking-widest px-1">Daily Mandatory</h3>
+                          {getDailyTasks(selectedLocKey, selectedUnit).map((item) => (
+                            <label 
+                              key={item} 
+                              className={`flex items-start p-4 rounded-2xl border transition-all cursor-pointer ${
+                                checklist[`daily_${item}`] ? 'bg-green-50 border-green-200 shadow-inner' : 'bg-white border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <input 
+                                type="checkbox" 
+                                className="hidden"
+                                checked={checklist[`daily_${item}`]}
+                                onChange={() => handleToggle(`daily_${item}`)}
+                              />
+                              <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
+                                checklist[`daily_${item}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                              }`}>
+                                {checklist[`daily_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
                               </div>
-                              {getWeeklyTasks(selectedLocKey).map((item) => {
-                                const isMonday = new Date(auditDate).getDay() === 1;
+                              <span className={`text-sm leading-snug ${checklist[`daily_${item}`] ? 'font-bold text-green-900' : 'font-semibold text-gray-700'}`}>{item}</span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {getWeeklyTasks(selectedLocKey).length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between px-1">
+                              <h3 className="text-xs uppercase font-extrabold text-blue-400 tracking-widest">Weekly Tasks</h3>
+                              {new Date(auditDate).getDay() !== 1 && (
+                                <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
+                                  Mondays Only
+                                </span>
+                              )}
+                            </div>
+                            {getWeeklyTasks(selectedLocKey).map((item) => {
+                              const isMonday = new Date(auditDate).getDay() === 1;
+                              return (
+                                <label 
+                                  key={item} 
+                                  className={`flex items-start p-4 rounded-2xl border border-dashed transition-all ${
+                                    isMonday ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
+                                  } ${
+                                    checklist[`weekly_${item}`] ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                                  }`}
+                                >
+                                  <input 
+                                    type="checkbox" 
+                                    className="hidden"
+                                    checked={checklist[`weekly_${item}`]}
+                                    onChange={() => isMonday && handleToggle(`weekly_${item}`)}
+                                    disabled={!isMonday}
+                                  />
+                                  <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
+                                    checklist[`weekly_${item}`] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                                  }`}>
+                                    {checklist[`weekly_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                  </div>
+                                  <span className={`text-sm leading-snug ${checklist[`weekly_${item}`] ? 'font-bold text-blue-900' : 'font-medium text-gray-600'}`}>{item}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedLocKey === 'bleed_trolley' && (
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        {BLEED_TROLLEY_DATA.map(compartment => (
+                          <div key={compartment.compartment} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
+                            <h3 className="text-xs font-extrabold text-red-800 uppercase tracking-widest bg-red-50 p-3 rounded-xl border border-red-100">
+                              {compartment.compartment}
+                            </h3>
+                            <div className="space-y-2">
+                              {compartment.items.map(item => {
+                                const state = checklist[item.name] || { checked: false, expiry: '' };
+                                const expiring = item.hasExpiry && checkExpiryWarning(state.expiry, auditDate);
+                                
                                 return (
-                                  <label 
-                                    key={item} 
-                                    className={`flex items-start p-4 rounded-2xl border border-dashed transition-all ${
-                                      isMonday ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
-                                    } ${
-                                      checklist[`weekly_${item}`] ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                                    }`}
-                                  >
-                                    <input 
-                                      type="checkbox" 
-                                      className="hidden"
-                                      checked={checklist[`weekly_${item}`]}
-                                      onChange={() => isMonday && handleToggle(`weekly_${item}`)}
-                                      disabled={!isMonday}
-                                    />
-                                    <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
-                                      checklist[`weekly_${item}`] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
-                                    }`}>
-                                      {checklist[`weekly_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                  <div key={item.name} className={`p-4 rounded-2xl border transition-all ${state.checked ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                                    <div className="flex items-start justify-between gap-4">
+                                       <label className="flex items-start gap-3 cursor-pointer flex-1">
+                                          <input 
+                                            type="checkbox" 
+                                            className="hidden" 
+                                            checked={state.checked} 
+                                            onChange={(e) => handleTrolleyCheck(item.name, e.target.checked)} 
+                                          />
+                                          <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-all ${state.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'}`}>
+                                             {state.checked && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                          </div>
+                                          <div>
+                                            <div className={`text-sm leading-snug ${state.checked ? 'font-bold text-green-900' : 'font-semibold text-gray-700'}`}>
+                                              <span className="text-gray-500 font-extrabold mr-1 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-xs">{item.qty}x</span> 
+                                              {item.name}
+                                            </div>
+                                          </div>
+                                       </label>
+                                       {item.hasExpiry && (
+                                         <div className="w-28 flex flex-col items-end flex-shrink-0">
+                                           <input 
+                                             type="month" 
+                                             value={state.expiry} 
+                                             onChange={(e) => handleTrolleyExpiry(item.name, e.target.value)} 
+                                             className={`w-full text-xs p-2 rounded-xl border font-bold text-center transition-all ${expiring ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200' : 'border-gray-200 bg-white focus:ring-blue-200 text-gray-700'}`}
+                                           />
+                                           {expiring && (
+                                              <span className="text-[9px] font-black text-red-600 mt-1 flex items-center gap-0.5 uppercase tracking-wider">
+                                                <AlertCircle className="w-3 h-3"/> Expiring Soon
+                                              </span>
+                                           )}
+                                         </div>
+                                       )}
                                     </div>
-                                    <span className={`text-sm leading-snug ${checklist[`weekly_${item}`] ? 'font-bold text-blue-900' : 'font-medium text-gray-600'}`}>{item}</span>
-                                  </label>
-                                );
+                                  </div>
+                                )
                               })}
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                       <label className="block">
-                        <span className="text-sm font-bold text-gray-700">{isRoomClosed ? "Reason for Room Closure" : "Comments / Notes (Optional)"}</span>
+                        <span className="text-sm font-bold text-gray-700">{isRoomClosed ? "Reason for Room Closure" : "Comments / Restock Notes (Optional)"}</span>
                         <textarea 
                           value={comment}
                           onChange={(e) => setComment(e.target.value)}
@@ -1031,7 +1272,6 @@
                 {view === 'history' && (
                   <div className="space-y-4 pt-2">
                     
-                    {/* Toggle Tabs */}
                     <div className="flex bg-gray-200 p-1 rounded-xl w-full">
                        <button 
                          onClick={() => setHistoryTab('logs')}
@@ -1062,11 +1302,9 @@
                       )}
                     </div>
 
-                    {/* View: COMPLIANCE MATRIX AND GRAPH */}
                     {historyTab === 'compliance' && (
                       <div className="space-y-4 pb-4">
                         
-                        {/* CSS Bar Chart for Weekly Performance */}
                         <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                           <div className="flex items-center gap-2 mb-4">
                             <BarChart3 className="w-5 h-5 text-blue-600" />
@@ -1097,7 +1335,6 @@
                           </div>
                         </div>
 
-                        {/* Area Breakdown Cards */}
                         <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Area Breakdown</h3>
                         {Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => {
                           const chronologicalDays = [...last7Days].reverse();
@@ -1117,7 +1354,7 @@
 
                             const standardLog = currentLogs.find(log => {
                               const logDate = getLogDate(log);
-                              return log.type !== 'unit_closure' && log.type !== 'room_closure' && isSameDay(logDate, d) && log.locationKey === locKey;
+                              return log.type === 'standard_audit' && isSameDay(logDate, d) && log.locationKey === locKey;
                             });
 
                             if (standardLog) {
@@ -1183,7 +1420,6 @@
                       </div>
                     )}
                     
-                    {/* View: RAW LOGS */}
                     {historyTab === 'logs' && currentLogs.length === 0 ? (
                       <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200">
                         <ListChecks className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -1191,6 +1427,8 @@
                       </div>
                     ) : historyTab === 'logs' && (
                       currentLogs.map((log) => {
+                        const dateLogicStr = getLogDate(log).toISOString().split('T')[0];
+
                         if (log.type === 'unit_closure' || log.type === 'room_closure') {
                           const isUnit = log.type === 'unit_closure';
                           return (
@@ -1276,6 +1514,117 @@
                           );
                         }
 
+                        if (log.type === 'trolley_audit') {
+                          const allItems = Object.keys(log.checklist || {});
+                          const missingItems = allItems.filter(k => !log.checklist[k].checked);
+                          const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                          const isPerfect = missingItems.length === 0;
+
+                          return (
+                            <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
+                              <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                                 {deleteConfirmId === log.id ? (
+                                   <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
+                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+                                       <Lock className="w-3 h-3" /> Admin Security
+                                     </div>
+                                     <input 
+                                       type="password"
+                                       value={pinInput}
+                                       onChange={(e) => setPinInput(e.target.value)}
+                                       placeholder="Enter PIN"
+                                       className="w-24 p-2 text-xs border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-200 transition-all text-center"
+                                     />
+                                     <div className="flex gap-1.5 w-full">
+                                        <button 
+                                          onClick={() => {setDeleteConfirmId(null); setPinInput('');}}
+                                          className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50"
+                                        >
+                                          Cancel
+                                        </button>
+                                        <button 
+                                          onClick={() => handleDelete(log.id)}
+                                          className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm"
+                                        >
+                                          Delete
+                                        </button>
+                                     </div>
+                                   </div>
+                                 ) : (
+                                   <button 
+                                     onClick={() => setDeleteConfirmId(log.id)}
+                                     className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                                     title="Delete Entry"
+                                   >
+                                     <Trash2 className="w-4 h-4" />
+                                   </button>
+                                 )}
+                              </div>
+
+                              <div className="flex justify-between items-start pr-10">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="bg-red-50 p-2 rounded-xl">
+                                      <Stethoscope className="w-4 h-4 text-red-600" />
+                                    </div>
+                                    <span className="font-extrabold text-gray-800">{log.locationTitle}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 pl-1">
+                                    <User className="w-3.5 h-3.5" />
+                                    <span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1.5">
+                                  <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                                    <Clock className="w-3 h-3" />
+                                    {formatDate(log.timestamp)}
+                                  </div>
+                                  {log.isLateEntry && (
+                                    <div className="text-[9px] uppercase tracking-widest font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+                                      Late Entry
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
+                                <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${
+                                  isPerfect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                                }`}>
+                                  {isPerfect ? 'Trolley Stocked' : `Missing Items (${missingItems.length})`}
+                                </span>
+                                {expiringItems.length > 0 && (
+                                  <span className="text-[10px] px-2.5 py-1 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 font-extrabold uppercase tracking-wide flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" /> Expiring Soon ({expiringItems.length})
+                                  </span>
+                                )}
+                              </div>
+
+                              {!isPerfect && (
+                                <div className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded-2xl border border-red-100">
+                                  <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missing Items:</span>
+                                  {missingItems.join(', ')}
+                                </div>
+                              )}
+
+                              {expiringItems.length > 0 && (
+                                <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200">
+                                  <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Items Exiring Soon:</span>
+                                  {expiringItems.join(', ')}
+                                </div>
+                              )}
+
+                              {log.comment && (
+                                <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic">
+                                  <span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>
+                                  "{log.comment}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        // Standard Audit rendering
                         const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
                         const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
                         const dailyTotal = dailyKeys.length;
@@ -1353,9 +1702,9 @@
                           
                           <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
                             <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${
-                              isAllDailyDone ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                              isAllDailyDone ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'
                             }`}>
-                              {isAllDailyDone ? 'Daily Done' : `Daily: ${dailyDone}/${dailyTotal}`}
+                              {isAllDailyDone ? 'Daily Done' : `Incomplete: ${dailyDone}/${dailyTotal}`}
                             </span>
                             {Object.entries(log.checklist || {}).filter(([k,v]) => k.startsWith('weekly_') && v).length > 0 && (
                               <span className="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 font-extrabold uppercase tracking-wide">
@@ -1365,7 +1714,7 @@
                           </div>
 
                           {!isAllDailyDone && (
-                            <div className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded-2xl border border-red-100">
+                            <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200">
                               <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missed Tasks:</span>
                               {missingDaily.join(', ')}
                             </div>
