@@ -383,7 +383,7 @@
                             completed++; // Closed rooms count as "completed" so it doesn't penalize.
                         } else {
                             const dailyKeys = Object.keys(areaLog.checklist || {}).filter(k => k.startsWith('daily_'));
-                            const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => areaLog.checklist[k]);
+                            const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => areaLog.checklist[k]);
                             if (isAllDone) completed++;
                         }
                     }
@@ -585,8 +585,17 @@
             return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
           };
 
+          const todayDate = new Date();
+          const isWeeklyExportUnlocked = todayDate.getDay() === 0 && todayDate.getHours() >= 10;
+
           const exportToPDF = () => {
             if (currentLogs.length === 0) return;
+
+            if (!isWeeklyExportUnlocked) {
+              setError("Weekly PDF Report is only available for download on Sundays from 10:00 AM onwards.");
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
 
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
@@ -625,15 +634,19 @@
                   return;
                 }
 
-                // Check for old legacy logs (no type) OR explicit standard_audits
+                // Blacklist approach: Everything that isn't a closure or a trolley is a standard log.
                 const standardLog = currentLogs.find(log => {
                   const logDate = getLogDate(log);
-                  return (!log.type || log.type === 'standard_audit') && isSameDay(logDate, d) && log.locationKey === locKey;
+                  return log.type !== 'unit_closure' && 
+                         log.type !== 'room_closure' && 
+                         log.type !== 'trolley_audit' && 
+                         isSameDay(logDate, d) && 
+                         log.locationKey === locKey;
                 });
                 
                 if (standardLog) {
                   const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
-                  const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => standardLog.checklist[k]);
+                  const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => standardLog.checklist[k]);
                   if (isAllDone) {
                     complianceHtml += `<td style="color: #15803d; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f0fdf4;">Done</td>`;
                   } else {
@@ -745,11 +758,11 @@
                 return;
               }
 
-              // Handle Standard Audits (and fallback for older logs lacking the 'type' field)
+              // Handle Standard Audits (Blacklist fallback allows older logs to process correctly)
               const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
               const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
               const dailyTotal = dailyKeys.length;
-              const isAllDailyDone = dailyDone === dailyTotal;
+              const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
               const missingDailyItems = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
 
               const statusBadge = isAllDailyDone 
@@ -1295,10 +1308,16 @@
                       {currentLogs.length > 0 && (
                         <button 
                           onClick={exportToPDF}
-                          className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
+                          disabled={!isWeeklyExportUnlocked}
+                          className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors shadow-sm ${
+                            isWeeklyExportUnlocked
+                              ? 'text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100'
+                              : 'text-gray-500 bg-gray-100 border-gray-200 cursor-not-allowed opacity-90'
+                          }`}
+                          title={!isWeeklyExportUnlocked ? "Weekly report unlocks every Sunday from 10:00 AM" : "Download 7-Day Weekly Report"}
                         >
-                          <FileText className="w-4 h-4" />
-                          Save as PDF
+                          {isWeeklyExportUnlocked ? <FileText className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          {isWeeklyExportUnlocked ? 'Save Weekly PDF' : 'Unlocks Sun 10:00'}
                         </button>
                       )}
                     </div>
@@ -1353,14 +1372,19 @@
                               return { date: d, status: 'closed' };
                             }
 
+                            // Blacklist check handles older legacy data accurately
                             const standardLog = currentLogs.find(log => {
                               const logDate = getLogDate(log);
-                              return (!log.type || log.type === 'standard_audit') && isSameDay(logDate, d) && log.locationKey === locKey;
+                              return log.type !== 'unit_closure' && 
+                                     log.type !== 'room_closure' && 
+                                     log.type !== 'trolley_audit' && 
+                                     isSameDay(logDate, d) && 
+                                     log.locationKey === locKey;
                             });
 
                             if (standardLog) {
                               const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
-                              const isAllDone = dailyKeys.length > 0 && dailyKeys.every(k => standardLog.checklist[k]);
+                              const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => standardLog.checklist[k]);
                               
                               if (isAllDone) {
                                 doneCount++;
@@ -1629,7 +1653,7 @@
                         const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
                         const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
                         const dailyTotal = dailyKeys.length;
-                        const isAllDailyDone = dailyDone === dailyTotal;
+                        const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
                         const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
 
                         return (
@@ -1696,7 +1720,7 @@
                               {log.isLateEntry && (
                                 <div className="text-[9px] uppercase tracking-widest font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
                                   Late Entry
-                                </div>
+                                 </div>
                               )}
                             </div>
                           </div>
