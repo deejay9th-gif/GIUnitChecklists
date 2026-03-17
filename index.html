@@ -585,17 +585,8 @@
             return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
           };
 
-          const todayDate = new Date();
-          const isWeeklyExportUnlocked = todayDate.getDay() === 0 && todayDate.getHours() >= 10;
-
           const exportToPDF = () => {
             if (currentLogs.length === 0) return;
-
-            if (!isWeeklyExportUnlocked) {
-              setError("Weekly PDF Report is only available for download on Sundays from 10:00 AM onwards.");
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              return;
-            }
 
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
@@ -1308,16 +1299,10 @@
                       {currentLogs.length > 0 && (
                         <button 
                           onClick={exportToPDF}
-                          disabled={!isWeeklyExportUnlocked}
-                          className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors shadow-sm ${
-                            isWeeklyExportUnlocked
-                              ? 'text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100'
-                              : 'text-gray-500 bg-gray-100 border-gray-200 cursor-not-allowed opacity-90'
-                          }`}
-                          title={!isWeeklyExportUnlocked ? "Weekly report unlocks every Sunday from 10:00 AM" : "Download 7-Day Weekly Report"}
+                          className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
                         >
-                          {isWeeklyExportUnlocked ? <FileText className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                          {isWeeklyExportUnlocked ? 'Save Weekly PDF' : 'Unlocks Sun 10:00'}
+                          <FileText className="w-4 h-4" />
+                          Save Weekly PDF
                         </button>
                       )}
                     </div>
@@ -1720,7 +1705,7 @@
                               {log.isLateEntry && (
                                 <div className="text-[9px] uppercase tracking-widest font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
                                   Late Entry
-                                 </div>
+                                </div>
                               )}
                             </div>
                           </div>
