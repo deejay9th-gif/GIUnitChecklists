@@ -308,6 +308,7 @@
           const [closureReason, setClosureReason] = useState('');
           const [isRoomClosed, setIsRoomClosed] = useState(false);
           const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
+          const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
 
           // --- Auth Setup ---
           useEffect(() => {
@@ -363,7 +364,8 @@
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
           const last7Days = Array.from({length: 7}, (_, i) => {
-            const d = new Date();
+            const [year, month, day] = reportEndDate.split('-');
+            const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
             d.setDate(d.getDate() - i);
             return d;
           });
@@ -594,8 +596,14 @@
               return;
             }
             
-            const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
             const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+            // Scope the detailed logs to ONLY the selected 7 days
+            const reportLogs = currentLogs.filter(log => {
+              const logDate = getLogDate(log);
+              return last7Days.some(d => isSameDay(logDate, d));
+            });
 
             let complianceHtml = `
               <div style="margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
@@ -695,47 +703,95 @@
                   <tbody>
             `;
 
-            currentLogs.forEach(log => {
-              const dateObj = getLogDate(log);
-              const dateStr = dateObj.toLocaleDateString();
-              const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const dateLogicStr = dateObj.toISOString().split('T')[0];
-              const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
-              
-              if (log.type === 'unit_closure' || log.type === 'room_closure') {
-                const isUnit = log.type === 'unit_closure';
-                const statusBadge = `<span class="badge bg-gray">${isUnit ? 'Not Running' : 'Room Closed'}</span>`;
-                const detailsText = log.comment ? `<strong>Reason:</strong> ${log.comment}` : '<em>No reason provided</em>';
+            if (reportLogs.length === 0) {
+              html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">No audit records found during this 7-day period.</td></tr>`;
+            } else {
+              reportLogs.forEach(log => {
+                const dateObj = getLogDate(log);
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateLogicStr = dateObj.toISOString().split('T')[0];
+                const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
                 
-                html += `
-                  <tr>
-                    <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
-                    <td><strong>${isUnit ? 'Entire Unit' : log.locationTitle}</strong></td>
-                    <td>${log.initials}</td>
-                    <td>${statusBadge}</td>
-                    <td style="color: #475569;">${detailsText}</td>
-                  </tr>
-                `;
-                return;
-              }
+                if (log.type === 'unit_closure' || log.type === 'room_closure') {
+                  const isUnit = log.type === 'unit_closure';
+                  const statusBadge = `<span class="badge bg-gray">${isUnit ? 'Not Running' : 'Room Closed'}</span>`;
+                  const detailsText = log.comment ? `<strong>Reason:</strong> ${log.comment}` : '<em>No reason provided</em>';
+                  
+                  html += `
+                    <tr>
+                      <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                      <td><strong>${isUnit ? 'Entire Unit' : log.locationTitle}</strong></td>
+                      <td>${log.initials}</td>
+                      <td>${statusBadge}</td>
+                      <td style="color: #475569;">${detailsText}</td>
+                    </tr>
+                  `;
+                  return;
+                }
 
-              if (log.type === 'trolley_audit') {
-                const allItems = Object.keys(log.checklist || {});
-                const missingItems = allItems.filter(k => !log.checklist[k].checked);
-                const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
-                
-                const statusBadge = missingItems.length === 0 
-                  ? `<span class="badge bg-green">Fully Stocked</span>` 
-                  : `<span class="badge bg-red">Missing (${missingItems.length})</span>`;
+                if (log.type === 'trolley_audit') {
+                  const allItems = Object.keys(log.checklist || {});
+                  const missingItems = allItems.filter(k => !log.checklist[k].checked);
+                  const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                  
+                  const statusBadge = missingItems.length === 0 
+                    ? `<span class="badge bg-green">Fully Stocked</span>` 
+                    : `<span class="badge bg-red">Missing (${missingItems.length})</span>`;
+
+                  let detailsLines = [];
+                  if (missingItems.length > 0) detailsLines.push(`<div style="color: #b91c1c;"><strong>Missing:</strong> ${missingItems.join(', ')}</div>`);
+                  if (expiringItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Expiring Soon/Expired:</strong> ${expiringItems.join(', ')}</div>`);
+                  if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                  
+                  const finalDetails = detailsLines.length > 0 
+                    ? `<div class="details-block">${detailsLines.join('')}</div>`
+                    : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date. No notes.</span>`;
+
+                  html += `
+                    <tr>
+                      <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                      <td><strong>${log.locationTitle}</strong></td>
+                      <td>${log.initials}</td>
+                      <td>${statusBadge}</td>
+                      <td>${finalDetails}</td>
+                    </tr>
+                  `;
+                  return;
+                }
+
+                // Handle Standard Audits (Blacklist fallback allows older logs to process correctly)
+                const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+                const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
+                const dailyTotal = dailyKeys.length;
+                const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
+                const missingDailyItems = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+
+                const statusBadge = isAllDailyDone 
+                  ? `<span class="badge bg-green">Completed</span>`
+                  : `<span class="badge bg-orange">Incomplete (${dailyDone}/${dailyTotal})</span>`;
 
                 let detailsLines = [];
-                if (missingItems.length > 0) detailsLines.push(`<div style="color: #b91c1c;"><strong>Missing:</strong> ${missingItems.join(', ')}</div>`);
-                if (expiringItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Expiring Soon/Expired:</strong> ${expiringItems.join(', ')}</div>`);
-                if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
                 
+                if (!isAllDailyDone && missingDailyItems.length > 0) {
+                  detailsLines.push(`<div style="color: #c2410c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
+                }
+
+                const weeklyDoneList = Object.entries(log.checklist || {})
+                  .filter(([k, v]) => k.startsWith('weekly_') && v)
+                  .map(([k]) => k.replace('weekly_', ''));
+
+                if (weeklyDoneList.length > 0) {
+                  detailsLines.push(`<div style="color: #1d4ed8;"><strong>Weekly Tasks Done:</strong> ${weeklyDoneList.join(', ')}</div>`);
+                }
+
+                if (log.comment) {
+                  detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                }
+
                 const finalDetails = detailsLines.length > 0 
                   ? `<div class="details-block">${detailsLines.join('')}</div>`
-                  : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date. No notes.</span>`;
+                  : `<span style="color: #94a3b8; font-style: italic;">Standard tasks completed. No notes.</span>`;
 
                 html += `
                   <tr>
@@ -746,52 +802,8 @@
                     <td>${finalDetails}</td>
                   </tr>
                 `;
-                return;
-              }
-
-              // Handle Standard Audits (Blacklist fallback allows older logs to process correctly)
-              const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-              const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
-              const dailyTotal = dailyKeys.length;
-              const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
-              const missingDailyItems = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
-
-              const statusBadge = isAllDailyDone 
-                ? `<span class="badge bg-green">Completed</span>`
-                : `<span class="badge bg-orange">Incomplete (${dailyDone}/${dailyTotal})</span>`;
-
-              let detailsLines = [];
-              
-              if (!isAllDailyDone && missingDailyItems.length > 0) {
-                detailsLines.push(`<div style="color: #c2410c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
-              }
-
-              const weeklyDoneList = Object.entries(log.checklist || {})
-                .filter(([k, v]) => k.startsWith('weekly_') && v)
-                .map(([k]) => k.replace('weekly_', ''));
-
-              if (weeklyDoneList.length > 0) {
-                detailsLines.push(`<div style="color: #1d4ed8;"><strong>Weekly Tasks Done:</strong> ${weeklyDoneList.join(', ')}</div>`);
-              }
-
-              if (log.comment) {
-                detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
-              }
-
-              const finalDetails = detailsLines.length > 0 
-                ? `<div class="details-block">${detailsLines.join('')}</div>`
-                : `<span style="color: #94a3b8; font-style: italic;">Standard tasks completed. No notes.</span>`;
-
-              html += `
-                <tr>
-                  <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
-                  <td><strong>${log.locationTitle}</strong></td>
-                  <td>${log.initials}</td>
-                  <td>${statusBadge}</td>
-                  <td>${finalDetails}</td>
-                </tr>
-              `;
-            });
+              });
+            }
 
             html += `
                   </tbody>
@@ -1292,7 +1304,23 @@
                        </button>
                     </div>
 
-                    <div className="flex items-center justify-between px-2 pt-2">
+                    {historyTab === 'compliance' && (
+                      <div className="mt-4 flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-200">
+                        <div className="flex items-center gap-2">
+                           <CalendarDays className="w-5 h-5 text-blue-600" />
+                           <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wide">Report End Date</span>
+                        </div>
+                        <input 
+                          type="date" 
+                          value={reportEndDate}
+                          max={new Date().toISOString().split('T')[0]}
+                          onChange={(e) => setReportEndDate(e.target.value)}
+                          className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between px-2 pt-4">
                       <h2 className="font-extrabold text-xl text-gray-800">
                         {historyTab === 'logs' ? 'Daily Audits' : 'Weekly Overview'}
                       </h2>
