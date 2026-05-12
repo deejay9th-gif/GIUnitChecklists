@@ -359,25 +359,33 @@
             return () => unsubscribe();
           }, [user]);
 
+          // --- Safe Date Helper ---
+          const getLogDate = (log) => {
+            if (!log || !log.timestamp) return new Date();
+            const d = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+            return isNaN(d.getTime()) ? new Date() : d;
+          };
+
           // --- Helpers ---
           const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
 
           const isSameDay = (d1, d2) => {
+            if (!d1 || !d2) return false;
             return d1.getFullYear() === d2.getFullYear() && 
                    d1.getMonth() === d2.getMonth() && 
                    d1.getDate() === d2.getDate();
           };
 
-          const getLogDate = (log) => log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
-
           const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
           const getLogIssues = (log) => {
+            if (!log) return null;
             if (log.type === 'trolley_audit') {
               const allItems = Object.keys(log.checklist || {});
               const missing = allItems.filter(k => !log.checklist[k]?.checked);
-              const expiring = allItems.filter(k => log.checklist[k]?.expiry && checkExpiryWarning(log.checklist[k].expiry, getLogDate(log).toISOString().split('T')[0]));
+              const auditDateLogicStr = getLogDate(log).toISOString().split('T')[0];
+              const expiring = allItems.filter(k => log.checklist[k]?.expiry && checkExpiryWarning(log.checklist[k].expiry, auditDateLogicStr));
               if (missing.length > 0 || expiring.length > 0) return { missing, expiring };
             } else if (log.type === 'standard_audit') {
               const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
@@ -390,13 +398,14 @@
           const pendingIssues = currentLogs.filter(log => getLogIssues(log) !== null && !log.resolved);
 
           const last7Days = Array.from({length: 7}, (_, i) => {
-            const [year, month, day] = reportEndDate.split('-');
-            const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const safeEndDate = reportEndDate || new Date().toISOString().split('T')[0];
+            const [year, month, day] = safeEndDate.split('-');
+            const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
             d.setDate(d.getDate() - i);
             return d;
           });
 
-          // Calculate Data for Weekly Performance Graph (Only standard daily areas)
+          // Calculate Data for Weekly Performance Graph
           const weeklyChartData = last7Days.map(d => {
             const dayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), d));
             const isUnitClosed = dayLogs.some(log => log.type === 'unit_closure');
@@ -408,7 +417,7 @@
                     const areaLog = dayLogs.find(log => log.locationKey === locKey && log.type !== 'trolley_audit');
                     if (areaLog) {
                         if (areaLog.type === 'room_closure') {
-                            completed++; // Closed rooms count as "completed" so it doesn't penalize.
+                            completed++; 
                         } else {
                             const dailyKeys = Object.keys(areaLog.checklist || {}).filter(k => k.startsWith('daily_'));
                             const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => areaLog.checklist[k]);
@@ -429,7 +438,8 @@
 
           // Dynamic Task Fetching 
           const getDailyTasks = (locKey, unit) => {
-            let tasks = CHECKLIST_DATA[locKey].daily;
+            if (!CHECKLIST_DATA[locKey]) return [];
+            let tasks = CHECKLIST_DATA[locKey].daily || [];
             if (locKey === 'room1' && unit !== 'Lady Sobell') {
               tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
             }
@@ -440,17 +450,18 @@
           };
 
           const getWeeklyTasks = (locKey) => {
-            return CHECKLIST_DATA[locKey].weekly;
+            if (!CHECKLIST_DATA[locKey]) return [];
+            return CHECKLIST_DATA[locKey].weekly || [];
           };
 
-          // Checks if an expiry date string (YYYY-MM) is within 1 month of the audit date
+          // Expiry check logic
           const checkExpiryWarning = (expiryStr, auditDateStr) => {
-            if (!expiryStr) return false; 
+            if (!expiryStr || !auditDateStr) return false; 
             const [expYear, expMonth] = expiryStr.split('-');
-            const expDate = new Date(parseInt(expYear), parseInt(expMonth) - 1, 1); 
+            const expDate = new Date(parseInt(expYear, 10), parseInt(expMonth, 10) - 1, 1); 
             
             const [audYear, audMonth, audDay] = auditDateStr.split('-');
-            const audDate = new Date(parseInt(audYear), parseInt(audMonth) - 1, parseInt(audDay));
+            const audDate = new Date(parseInt(audYear, 10), parseInt(audMonth, 10) - 1, parseInt(audDay, 10));
             
             const thresholdDate = new Date(audDate);
             thresholdDate.setMonth(thresholdDate.getMonth() + 1);
@@ -530,11 +541,12 @@
             try {
               const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
               
-              const [year, month, day] = auditDate.split('-');
+              const safeAuditDate = auditDate || new Date().toISOString().split('T')[0];
+              const [year, month, day] = safeAuditDate.split('-');
               const targetTimestamp = new Date();
-              targetTimestamp.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+              targetTimestamp.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
               
-              const isToday = auditDate === new Date().toISOString().split('T')[0];
+              const isToday = safeAuditDate === new Date().toISOString().split('T')[0];
               if (!isToday) {
                 targetTimestamp.setHours(12, 0, 0, 0);
               }
@@ -579,9 +591,10 @@
             setError(null);
 
             try {
-              const [year, month, day] = closureDate.split('-');
-              const targetTimestamp = new Date(year, month - 1, day, 12, 0, 0);
-              const isToday = closureDate === new Date().toISOString().split('T')[0];
+              const safeClosureDate = closureDate || new Date().toISOString().split('T')[0];
+              const [year, month, day] = safeClosureDate.split('-');
+              const targetTimestamp = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), 12, 0, 0);
+              const isToday = safeClosureDate === new Date().toISOString().split('T')[0];
 
               const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
               await addDoc(logsRef, {
@@ -633,6 +646,7 @@
           const formatDate = (timestamp) => {
             if (!timestamp) return "";
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            if (isNaN(date.getTime())) return "";
             return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
           };
 
@@ -648,7 +662,6 @@
             const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
             const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
-            // Scope the detailed logs to ONLY the selected 7 days
             const reportLogs = currentLogs.filter(log => {
               const logDate = getLogDate(log);
               return last7Days.some(d => isSameDay(logDate, d));
@@ -682,7 +695,6 @@
                   return;
                 }
 
-                // Blacklist approach: Everything that isn't a closure or a trolley is a standard log.
                 const standardLog = currentLogs.find(log => {
                   const logDate = getLogDate(log);
                   return log.type !== 'unit_closure' && 
@@ -794,7 +806,7 @@
                   if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
                   
                   if (log.resolved) {
-                    detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>✓ Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
+                    detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>&check; Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
                   }
 
                   const finalDetails = detailsLines.length > 0 
@@ -813,7 +825,7 @@
                   return;
                 }
 
-                // Handle Standard Audits (Blacklist fallback allows older logs to process correctly)
+                // Handle Standard Audits
                 const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
                 const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
                 const dailyTotal = dailyKeys.length;
@@ -843,7 +855,7 @@
                 }
 
                 if (log.resolved) {
-                  detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>✓ Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
+                  detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>&check; Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
                 }
 
                 const finalDetails = detailsLines.length > 0 
@@ -1010,7 +1022,6 @@
                   </div>
                 )}
 
-                {}
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
                     <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
@@ -1096,7 +1107,6 @@
                   </div>
                 )}
 
-                {}
                 {view === 'check' && (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className={`${selectedLocKey === 'bleed_trolley' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm`}>
@@ -1304,7 +1314,6 @@
                   </form>
                 )}
 
-                {}
                 {view === 'mark-closed' && (
                   <form onSubmit={handleClosureSubmit} className="space-y-6">
                     <div className="bg-gray-100 p-5 rounded-3xl border border-gray-200 flex items-center justify-between shadow-sm">
@@ -1466,7 +1475,6 @@
                               return { date: d, status: 'closed' };
                             }
 
-                            // Blacklist check handles older legacy data accurately
                             const standardLog = currentLogs.find(log => {
                               const logDate = getLogDate(log);
                               return log.type !== 'unit_closure' && 
@@ -1556,9 +1564,10 @@
                         </div>
 
                         {(() => {
-                           const [yearStr, monthStr] = reportMonth.split('-');
-                           const year = parseInt(yearStr);
-                           const month = parseInt(monthStr);
+                           const safeReportMonth = reportMonth || new Date().toISOString().substring(0, 7);
+                           const [yearStr, monthStr] = safeReportMonth.split('-');
+                           const year = parseInt(yearStr, 10) || new Date().getFullYear();
+                           const month = parseInt(monthStr, 10) || (new Date().getMonth() + 1);
                            const daysInMonth = new Date(year, month, 0).getDate();
                            const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
 
@@ -1567,7 +1576,10 @@
                              return d.getFullYear() === year && d.getMonth() === month - 1;
                            });
 
-                           const toDateString = (date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                           const toDateString = (date) => {
+                             if (isNaN(date.getTime())) return "";
+                             return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                           };
                            const unitClosureDays = new Set(thisMonthLogs.filter(l => l.type === 'unit_closure').map(l => toDateString(getLogDate(l))));
 
                            const locationsToTrack = Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => ({ key: locKey, title: locData.title, type: 'standard' }));
@@ -2033,19 +2045,19 @@
                                </div>
 
                                <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 space-y-2">
-                                  {issues.missingDaily && (
+                                  {issues.missingDaily?.length > 0 && (
                                      <div>
                                         <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Missed Daily Tasks:</span>
                                         <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.missingDaily.map(i => <li key={i}>{i}</li>)}</ul>
                                      </div>
                                   )}
-                                  {issues.missing && (
+                                  {issues.missing?.length > 0 && (
                                      <div>
                                         <span className="text-[10px] font-bold text-red-800 uppercase tracking-widest block mb-1">Missing Trolley Items:</span>
                                         <ul className="text-sm text-red-700 list-disc list-inside font-medium">{issues.missing.map(i => <li key={i}>{i}</li>)}</ul>
                                      </div>
                                   )}
-                                  {issues.expiring && (
+                                  {issues.expiring?.length > 0 && (
                                      <div>
                                         <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Expiring Soon:</span>
                                         <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.expiring.map(i => <li key={i}>{i}</li>)}</ul>
@@ -2138,7 +2150,6 @@
                 )}
               </main>
 
-              {}
               {/* Copyright Footnote */}
               <footer className="max-w-md mx-auto px-4 pb-8 pt-4 text-center">
                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
