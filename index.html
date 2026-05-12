@@ -79,7 +79,6 @@
         } from 'lucide-react';
 
         // --- Configuration ---
-        // Change this PIN to your own secret code for deletions
         const ADMIN_PIN = "X135";
 
         // --- Firebase Configuration ---
@@ -350,7 +349,11 @@
             const q = query(logsRef);
             const unsubscribe = onSnapshot(q, (snapshot) => {
               const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              const sortedData = data.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+              const sortedData = data.sort((a, b) => {
+                const aTime = a.timestamp?.seconds || 0;
+                const bTime = b.timestamp?.seconds || 0;
+                return bTime - aTime;
+              });
               setLogs(sortedData);
             }, (err) => {
               console.error("Firestore error:", err);
@@ -359,50 +362,119 @@
             return () => unsubscribe();
           }, [user]);
 
-          // --- Safe Date Helper ---
+          // --- Crash-Proof Date Helpers ---
           const getLogDate = (log) => {
-            if (!log || !log.timestamp) return new Date();
-            const d = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
-            return isNaN(d.getTime()) ? new Date() : d;
+            try {
+              if (!log || !log.timestamp) return new Date();
+              if (typeof log.timestamp.toDate === 'function') return log.timestamp.toDate();
+              if (log.timestamp.seconds) return new Date(log.timestamp.seconds * 1000);
+              const d = new Date(log.timestamp);
+              if (isNaN(d.getTime())) return new Date();
+              return d;
+            } catch (e) {
+              return new Date();
+            }
+          };
+
+          const formatDate = (timestamp) => {
+            try {
+              if (!timestamp) return "";
+              const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
+              if (isNaN(date.getTime())) return "";
+              const pad = n => n.toString().padStart(2, '0');
+              return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            } catch (e) {
+              return "";
+            }
+          };
+
+          const getDayName = (dateObj) => {
+            try {
+              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+              return days[dateObj.getDay()];
+            } catch (e) {
+              return "";
+            }
+          };
+
+          const getMonthName = (monthNum) => {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return months[monthNum - 1] || "";
+          };
+
+          const isSameDay = (d1, d2) => {
+            try {
+              if (!d1 || !d2 || isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
+              return d1.getFullYear() === d2.getFullYear() && 
+                     d1.getMonth() === d2.getMonth() && 
+                     d1.getDate() === d2.getDate();
+            } catch(e) {
+              return false;
+            }
           };
 
           // --- Helpers ---
-          const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
-
-          const isSameDay = (d1, d2) => {
-            if (!d1 || !d2) return false;
-            return d1.getFullYear() === d2.getFullYear() && 
-                   d1.getMonth() === d2.getMonth() && 
-                   d1.getDate() === d2.getDate();
-          };
+          const currentLogs = logs.filter(log => log && (log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell')));
 
           const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
-          const getLogIssues = (log) => {
-            if (!log) return null;
-            if (log.type === 'trolley_audit') {
-              const allItems = Object.keys(log.checklist || {});
-              const missing = allItems.filter(k => !log.checklist[k]?.checked);
-              const auditDateLogicStr = getLogDate(log).toISOString().split('T')[0];
-              const expiring = allItems.filter(k => log.checklist[k]?.expiry && checkExpiryWarning(log.checklist[k].expiry, auditDateLogicStr));
-              if (missing.length > 0 || expiring.length > 0) return { missing, expiring };
-            } else if (log.type === 'standard_audit') {
-              const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-              const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
-              if (missingDaily.length > 0) return { missingDaily };
+          const checkExpiryWarning = (expiryStr, auditDateStr) => {
+            try {
+              if (!expiryStr || typeof expiryStr !== 'string' || !auditDateStr || typeof auditDateStr !== 'string') return false; 
+              
+              const expParts = expiryStr.split('-');
+              if (expParts.length < 2) return false;
+              const expDate = new Date(parseInt(expParts[0], 10), parseInt(expParts[1], 10) - 1, 1); 
+              
+              const audParts = auditDateStr.split('-');
+              if (audParts.length < 3) return false;
+              const audDate = new Date(parseInt(audParts[0], 10), parseInt(audParts[1], 10) - 1, parseInt(audParts[2], 10));
+              
+              const thresholdDate = new Date(audDate);
+              thresholdDate.setMonth(thresholdDate.getMonth() + 1);
+              
+              return expDate <= thresholdDate;
+            } catch (e) {
+              return false;
             }
-            return null;
           };
 
-          const pendingIssues = currentLogs.filter(log => getLogIssues(log) !== null && !log.resolved);
+          const getLogIssues = (log) => {
+            try {
+              if (!log) return null;
+              if (log.type === 'trolley_audit') {
+                const allItems = Object.keys(log.checklist || {});
+                const missing = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
+                
+                const logDate = getLogDate(log);
+                const safeAuditDateStr = `${logDate.getFullYear()}-${(logDate.getMonth() + 1).toString().padStart(2, '0')}-${logDate.getDate().toString().padStart(2, '0')}`;
+                
+                const expiring = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, safeAuditDateStr));
+                if (missing.length > 0 || expiring.length > 0) return { missing, expiring };
+              } else if (log.type === 'standard_audit') {
+                const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+                const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+                if (missingDaily.length > 0) return { missingDaily };
+              }
+              return null;
+            } catch (e) {
+              return null;
+            }
+          };
+
+          const pendingIssues = currentLogs.filter(log => log && !log.resolved && getLogIssues(log) !== null);
 
           const last7Days = Array.from({length: 7}, (_, i) => {
-            const safeEndDate = reportEndDate || new Date().toISOString().split('T')[0];
-            const [year, month, day] = safeEndDate.split('-');
-            const d = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-            d.setDate(d.getDate() - i);
-            return d;
+            try {
+              const safeEndDate = (reportEndDate && typeof reportEndDate === 'string') ? reportEndDate : new Date().toISOString().split('T')[0];
+              const parts = safeEndDate.split('-');
+              const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+              d.setDate(d.getDate() - i);
+              return d;
+            } catch(e) {
+              return new Date();
+            }
           });
 
           // Calculate Data for Weekly Performance Graph
@@ -430,7 +502,7 @@
             return {
                 date: d,
                 isUnitClosed,
-                percentage: isUnitClosed ? 0 : Math.round((completed / totalAreas) * 100),
+                percentage: isUnitClosed || totalAreas === 0 ? 0 : Math.round((completed / totalAreas) * 100),
                 completed,
                 totalAreas
             };
@@ -438,7 +510,7 @@
 
           // Dynamic Task Fetching 
           const getDailyTasks = (locKey, unit) => {
-            if (!CHECKLIST_DATA[locKey]) return [];
+            if (!locKey || !CHECKLIST_DATA[locKey]) return [];
             let tasks = CHECKLIST_DATA[locKey].daily || [];
             if (locKey === 'room1' && unit !== 'Lady Sobell') {
               tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
@@ -450,48 +522,39 @@
           };
 
           const getWeeklyTasks = (locKey) => {
-            if (!CHECKLIST_DATA[locKey]) return [];
+            if (!locKey || !CHECKLIST_DATA[locKey]) return [];
             return CHECKLIST_DATA[locKey].weekly || [];
-          };
-
-          // Expiry check logic
-          const checkExpiryWarning = (expiryStr, auditDateStr) => {
-            if (!expiryStr || !auditDateStr) return false; 
-            const [expYear, expMonth] = expiryStr.split('-');
-            const expDate = new Date(parseInt(expYear, 10), parseInt(expMonth, 10) - 1, 1); 
-            
-            const [audYear, audMonth, audDay] = auditDateStr.split('-');
-            const audDate = new Date(parseInt(audYear, 10), parseInt(audMonth, 10) - 1, parseInt(audDay, 10));
-            
-            const thresholdDate = new Date(audDate);
-            thresholdDate.setMonth(thresholdDate.getMonth() + 1);
-            
-            return expDate <= thresholdDate;
           };
 
           // --- Handlers ---
           const startChecklist = (key) => {
-            setSelectedLocKey(key);
-            setComment('');
-            setIsRoomClosed(false); 
-            setAuditDate(new Date().toISOString().split('T')[0]); 
+            try {
+              setSelectedLocKey(key);
+              setComment('');
+              setIsRoomClosed(false); 
+              
+              const todayStr = new Date().toISOString().split('T')[0];
+              setAuditDate(todayStr); 
 
-            if (key === 'bleed_trolley') {
-              const initialTrolley = {};
-              BLEED_TROLLEY_DATA.forEach(comp => {
-                comp.items.forEach(item => {
-                  initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' };
+              if (key === 'bleed_trolley') {
+                const initialTrolley = {};
+                BLEED_TROLLEY_DATA.forEach(comp => {
+                  comp.items.forEach(item => {
+                    initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' };
+                  });
                 });
-              });
-              setChecklist(initialTrolley);
-            } else {
-              const initialChecklist = {};
-              getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
-              getWeeklyTasks(key).forEach(item => initialChecklist[`weekly_${item}`] = false);
-              setChecklist(initialChecklist);
+                setChecklist(initialTrolley);
+              } else {
+                const initialChecklist = {};
+                getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
+                getWeeklyTasks(key).forEach(item => initialChecklist[`weekly_${item}`] = false);
+                setChecklist(initialChecklist);
+              }
+              
+              setView('check');
+            } catch(e) {
+              setError("Failed to start checklist. Please refresh.");
             }
-            
-            setView('check');
           };
 
           const handleToggle = (itemKey) => {
@@ -541,10 +604,12 @@
             try {
               const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
               
-              const safeAuditDate = auditDate || new Date().toISOString().split('T')[0];
-              const [year, month, day] = safeAuditDate.split('-');
+              const safeAuditDate = (auditDate && typeof auditDate === 'string') ? auditDate : new Date().toISOString().split('T')[0];
+              const parts = safeAuditDate.split('-');
               const targetTimestamp = new Date();
-              targetTimestamp.setFullYear(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+              if (parts.length === 3) {
+                 targetTimestamp.setFullYear(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+              }
               
               const isToday = safeAuditDate === new Date().toISOString().split('T')[0];
               if (!isToday) {
@@ -554,7 +619,7 @@
               const payload = {
                 initials: initials.toUpperCase(),
                 locationKey: selectedLocKey,
-                locationTitle: selectedLocKey === 'bleed_trolley' ? "GI Bleed Emergency Trolley" : CHECKLIST_DATA[selectedLocKey].title,
+                locationTitle: selectedLocKey === 'bleed_trolley' ? "GI Bleed Emergency Trolley" : (CHECKLIST_DATA[selectedLocKey]?.title || "Unknown"),
                 unit: selectedUnit,
                 comment: comment.trim(),
                 timestamp: targetTimestamp,
@@ -591,9 +656,11 @@
             setError(null);
 
             try {
-              const safeClosureDate = closureDate || new Date().toISOString().split('T')[0];
-              const [year, month, day] = safeClosureDate.split('-');
-              const targetTimestamp = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), 12, 0, 0);
+              const safeClosureDate = (closureDate && typeof closureDate === 'string') ? closureDate : new Date().toISOString().split('T')[0];
+              const parts = safeClosureDate.split('-');
+              const targetTimestamp = parts.length === 3 
+                  ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0)
+                  : new Date();
               const isToday = safeClosureDate === new Date().toISOString().split('T')[0];
 
               const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
@@ -622,7 +689,7 @@
 
           const handleResolveIssue = async (e) => {
             e.preventDefault();
-            if (!resolveInitials.trim() || !resolveNote.trim()) return;
+            if (!resolveInitials.trim() || !resolveNote.trim() || !resolveModalLog) return;
             setSubmitting(true);
             try {
               const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', resolveModalLog.id);
@@ -643,13 +710,6 @@
             }
           };
 
-          const formatDate = (timestamp) => {
-            if (!timestamp) return "";
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            if (isNaN(date.getTime())) return "";
-            return date.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
-          };
-
           const exportToPDF = () => {
             if (currentLogs.length === 0) return;
 
@@ -659,8 +719,13 @@
               return;
             }
             
-            const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-            const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const formatSafeDate = (d) => {
+                const pad = n => n.toString().padStart(2, '0');
+                return `${pad(d.getDate())} ${getMonthName(d.getMonth() + 1)} ${d.getFullYear()}`;
+            };
+            
+            const oldestDate = formatSafeDate(last7Days[6]);
+            const newestDate = formatSafeDate(last7Days[0]);
 
             const reportLogs = currentLogs.filter(log => {
               const logDate = getLogDate(log);
@@ -678,7 +743,7 @@
             
             const reversedDays = [...last7Days].reverse();
             reversedDays.forEach(d => {
-              complianceHtml += `<th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">${d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</th>`;
+              complianceHtml += `<th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">${getDayName(d)}, ${d.getDate()} ${getMonthName(d.getMonth()+1)}</th>`;
             });
             complianceHtml += `</tr></thead><tbody>`;
 
@@ -739,7 +804,7 @@
                   .bg-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
                   .bg-orange { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
                   .bg-gray { background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
-                  .date-cell { white-space: nowrap; width: 12%; }
+                  .date-cell { white-space: nowrap; width: 14%; }
                   .details-block { display: flex; flex-direction: column; gap: 6px; }
                 </style>
               </head>
@@ -758,7 +823,7 @@
                       <th style="width: 15%">Location</th>
                       <th style="width: 10%">Staff</th>
                       <th style="width: 15%">Status</th>
-                      <th style="width: 48%">Details & Notes</th>
+                      <th style="width: 46%">Details & Notes</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -769,9 +834,12 @@
             } else {
               reportLogs.forEach(log => {
                 const dateObj = getLogDate(log);
-                const dateStr = dateObj.toLocaleDateString();
-                const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const dateLogicStr = dateObj.toISOString().split('T')[0];
+                const dateStr = formatDate(dateObj);
+                
+                // Extremely safe date string generation for comparisons
+                const pad = n => n.toString().padStart(2, '0');
+                const dateLogicStr = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
+                
                 const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
                 
                 if (log.type === 'unit_closure' || log.type === 'room_closure') {
@@ -781,7 +849,7 @@
                   
                   html += `
                     <tr>
-                      <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                      <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
                       <td><strong>${isUnit ? 'Entire Unit' : log.locationTitle}</strong></td>
                       <td>${log.initials}</td>
                       <td>${statusBadge}</td>
@@ -793,8 +861,8 @@
 
                 if (log.type === 'trolley_audit') {
                   const allItems = Object.keys(log.checklist || {});
-                  const missingItems = allItems.filter(k => !log.checklist[k].checked);
-                  const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                  const missingItems = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
+                  const expiringItems = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
                   
                   const statusBadge = missingItems.length === 0 
                     ? `<span class="badge bg-green">Fully Stocked</span>` 
@@ -815,7 +883,7 @@
 
                   html += `
                     <tr>
-                      <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                      <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
                       <td><strong>${log.locationTitle}</strong></td>
                       <td>${log.initials}</td>
                       <td>${statusBadge}</td>
@@ -864,7 +932,7 @@
 
                 html += `
                   <tr>
-                    <td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td>
+                    <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
                     <td><strong>${log.locationTitle}</strong></td>
                     <td>${log.initials}</td>
                     <td>${statusBadge}</td>
@@ -1177,7 +1245,7 @@
                               <input 
                                 type="checkbox" 
                                 className="hidden"
-                                checked={checklist[`daily_${item}`]}
+                                checked={checklist[`daily_${item}`] || false}
                                 onChange={() => handleToggle(`daily_${item}`)}
                               />
                               <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
@@ -1214,7 +1282,7 @@
                                   <input 
                                     type="checkbox" 
                                     className="hidden"
-                                    checked={checklist[`weekly_${item}`]}
+                                    checked={checklist[`weekly_${item}`] || false}
                                     onChange={() => isMonday && handleToggle(`weekly_${item}`)}
                                     disabled={!isMonday}
                                   />
@@ -1251,7 +1319,7 @@
                                           <input 
                                             type="checkbox" 
                                             className="hidden" 
-                                            checked={state.checked} 
+                                            checked={state.checked || false} 
                                             onChange={(e) => handleTrolleyCheck(item.name, e.target.checked)} 
                                           />
                                           <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-all ${state.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'}`}>
@@ -1268,7 +1336,7 @@
                                          <div className="w-28 flex flex-col items-end flex-shrink-0">
                                            <input 
                                              type="month" 
-                                             value={state.expiry} 
+                                             value={state.expiry || ''} 
                                              onChange={(e) => handleTrolleyExpiry(item.name, e.target.value)} 
                                              className={`w-full text-xs p-2 rounded-xl border font-bold text-center transition-all ${expiring ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200' : 'border-gray-200 bg-white focus:ring-blue-200 text-gray-700'}`}
                                            />
@@ -1450,7 +1518,7 @@
                                   )}
                                 </div>
                                 <span className={`text-[10px] font-bold ${i === 6 ? 'text-blue-700' : 'text-gray-500'}`}>
-                                  {i === 6 ? 'TDY' : data.date.toLocaleDateString(undefined, {weekday: 'short'}).substring(0, 2)}
+                                  {i === 6 ? 'TDY' : getDayName(data.date).substring(0, 2)}
                                 </span>
                                 {!data.isUnitClosed && <span className="text-[9px] font-black text-gray-700">{data.percentage}%</span>}
                               </div>
@@ -1535,7 +1603,7 @@
                                         {ds.status === 'missing' && <XCircle className="w-5 h-5" />}
                                       </div>
                                       <span className={`text-[10px] font-bold ${isToday ? 'text-blue-700' : 'text-gray-400'}`}>
-                                        {isToday ? 'TDY' : ds.date.toLocaleDateString(undefined, {weekday: 'short'}).substring(0, 2)}
+                                        {isToday ? 'TDY' : getDayName(ds.date).substring(0, 2)}
                                       </span>
                                     </div>
                                   );
@@ -1564,113 +1632,117 @@
                         </div>
 
                         {(() => {
-                           const safeReportMonth = reportMonth || new Date().toISOString().substring(0, 7);
-                           const [yearStr, monthStr] = safeReportMonth.split('-');
-                           const year = parseInt(yearStr, 10) || new Date().getFullYear();
-                           const month = parseInt(monthStr, 10) || (new Date().getMonth() + 1);
-                           const daysInMonth = new Date(year, month, 0).getDate();
-                           const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+                           try {
+                             const safeReportMonth = reportMonth || new Date().toISOString().substring(0, 7);
+                             const parts = safeReportMonth.split('-');
+                             const year = parseInt(parts[0], 10) || new Date().getFullYear();
+                             const month = parseInt(parts[1], 10) || (new Date().getMonth() + 1);
+                             const daysInMonth = new Date(year, month, 0).getDate();
+                             const monthName = getMonthName(month);
 
-                           const thisMonthLogs = currentLogs.filter(log => {
-                             const d = getLogDate(log);
-                             return d.getFullYear() === year && d.getMonth() === month - 1;
-                           });
-
-                           const toDateString = (date) => {
-                             if (isNaN(date.getTime())) return "";
-                             return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                           };
-                           const unitClosureDays = new Set(thisMonthLogs.filter(l => l.type === 'unit_closure').map(l => toDateString(getLogDate(l))));
-
-                           const locationsToTrack = Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => ({ key: locKey, title: locData.title, type: 'standard' }));
-                           if (selectedUnit === 'Lady Sobell') {
-                             locationsToTrack.push({ key: 'bleed_trolley', title: 'GI Bleed Emergency Trolley', type: 'trolley' });
-                           }
-
-                           const monthlyStats = locationsToTrack.map((loc) => {
-                             if (loc.type === 'trolley') {
-                               let mondays = 0;
-                               for (let i = 1; i <= daysInMonth; i++) {
-                                 if (new Date(year, month - 1, i).getDay() === 1) mondays++;
-                               }
-                               const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key);
-                               const doneCount = areaLogs.length; 
-                               const compliance = mondays === 0 ? 100 : Math.min(100, Math.round((doneCount / mondays) * 100));
-                               return { key: loc.key, title: loc.title, requiredDays: mondays, doneCount, closedCount: 0, compliance, daysInMonth };
-                             }
-
-                             const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key || l.type === 'unit_closure');
-                             
-                             const closedDaysSet = new Set(unitClosureDays);
-                             areaLogs.filter(l => l.type === 'room_closure' && l.locationKey === loc.key).forEach(l => closedDaysSet.add(toDateString(getLogDate(l))));
-                             
-                             const completedDaysSet = new Set();
-                             areaLogs.filter(l => l.type !== 'unit_closure' && l.type !== 'room_closure' && l.type !== 'trolley_audit' && l.locationKey === loc.key).forEach(l => {
-                                const dailyKeys = Object.keys(l.checklist || {}).filter(k => k.startsWith('daily_'));
-                                const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => l.checklist[k]);
-                                if (isAllDone) {
-                                   completedDaysSet.add(toDateString(getLogDate(l)));
-                                }
+                             const thisMonthLogs = currentLogs.filter(log => {
+                               const d = getLogDate(log);
+                               return d.getFullYear() === year && d.getMonth() === month - 1;
                              });
 
-                             let closedCount = 0;
-                             let doneCount = 0;
-                             for (let i = 1; i <= daysInMonth; i++) {
-                                const dStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                                if (closedDaysSet.has(dStr)) closedCount++;
-                                else if (completedDaysSet.has(dStr)) doneCount++;
+                             const toDateString = (date) => {
+                               if (!date || isNaN(date.getTime())) return "";
+                               return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                             };
+                             const unitClosureDays = new Set(thisMonthLogs.filter(l => l.type === 'unit_closure').map(l => toDateString(getLogDate(l))));
+
+                             const locationsToTrack = Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => ({ key: locKey, title: locData.title, type: 'standard' }));
+                             if (selectedUnit === 'Lady Sobell') {
+                               locationsToTrack.push({ key: 'bleed_trolley', title: 'GI Bleed Emergency Trolley', type: 'trolley' });
                              }
 
-                             const requiredDays = daysInMonth - closedCount;
-                             const compliance = requiredDays === 0 ? 100 : Math.round((doneCount / requiredDays) * 100);
+                             const monthlyStats = locationsToTrack.map((loc) => {
+                               if (loc.type === 'trolley') {
+                                 let mondays = 0;
+                                 for (let i = 1; i <= daysInMonth; i++) {
+                                   if (new Date(year, month - 1, i).getDay() === 1) mondays++;
+                                 }
+                                 const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key);
+                                 const doneCount = areaLogs.length; 
+                                 const compliance = mondays === 0 ? 100 : Math.min(100, Math.round((doneCount / mondays) * 100));
+                                 return { key: loc.key, title: loc.title, requiredDays: mondays, doneCount, closedCount: 0, compliance, daysInMonth };
+                               }
 
-                             return { key: loc.key, title: loc.title, requiredDays, doneCount, closedCount, compliance, daysInMonth };
-                           });
+                               const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key || l.type === 'unit_closure');
+                               
+                               const closedDaysSet = new Set(unitClosureDays);
+                               areaLogs.filter(l => l.type === 'room_closure' && l.locationKey === loc.key).forEach(l => closedDaysSet.add(toDateString(getLogDate(l))));
+                               
+                               const completedDaysSet = new Set();
+                               areaLogs.filter(l => l.type !== 'unit_closure' && l.type !== 'room_closure' && l.type !== 'trolley_audit' && l.locationKey === loc.key).forEach(l => {
+                                  const dailyKeys = Object.keys(l.checklist || {}).filter(k => k.startsWith('daily_'));
+                                  const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => l.checklist[k]);
+                                  if (isAllDone) {
+                                     completedDaysSet.add(toDateString(getLogDate(l)));
+                                  }
+                               });
 
-                           const totalRequired = monthlyStats.reduce((sum, stat) => sum + stat.requiredDays, 0);
-                           const totalDone = monthlyStats.reduce((sum, stat) => sum + stat.doneCount, 0);
-                           const overallCompliance = totalRequired === 0 ? 100 : Math.round((totalDone / totalRequired) * 100);
+                               let closedCount = 0;
+                               let doneCount = 0;
+                               for (let i = 1; i <= daysInMonth; i++) {
+                                  const dStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                  if (closedDaysSet.has(dStr)) closedCount++;
+                                  else if (completedDaysSet.has(dStr)) doneCount++;
+                               }
 
-                           return (
-                             <div className="space-y-4 animate-in fade-in duration-300">
-                                <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white">
-                                   <div className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{monthName} {year}</div>
-                                   <div className="flex items-end justify-between">
-                                      <div>
-                                        <div className="text-4xl font-extrabold">{overallCompliance}%</div>
-                                        <div className="text-sm font-medium opacity-90">Overall Unit Compliance</div>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-xl font-bold">{totalDone} / {totalRequired}</div>
-                                        <div className="text-xs opacity-75 uppercase tracking-wide">Total Audits</div>
-                                      </div>
-                                   </div>
-                                </div>
+                               const requiredDays = daysInMonth - closedCount;
+                               const compliance = requiredDays === 0 ? 100 : Math.round((doneCount / requiredDays) * 100);
 
-                                <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Monthly Area Breakdown</h3>
-                                
-                                {monthlyStats.map(stat => (
-                                  <div key={stat.key} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-                                     <div>
-                                        <h4 className="font-bold text-gray-800 text-base">{stat.title}</h4>
-                                        <div className="text-xs text-gray-500 mt-1 font-medium">
-                                          {stat.doneCount} done • {stat.closedCount} closed • {stat.daysInMonth} days
+                               return { key: loc.key, title: loc.title, requiredDays, doneCount, closedCount, compliance, daysInMonth };
+                             });
+
+                             const totalRequired = monthlyStats.reduce((sum, stat) => sum + stat.requiredDays, 0);
+                             const totalDone = monthlyStats.reduce((sum, stat) => sum + stat.doneCount, 0);
+                             const overallCompliance = totalRequired === 0 ? 100 : Math.round((totalDone / totalRequired) * 100);
+
+                             return (
+                               <div className="space-y-4 animate-in fade-in duration-300">
+                                  <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white">
+                                     <div className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{monthName} {year}</div>
+                                     <div className="flex items-end justify-between">
+                                        <div>
+                                          <div className="text-4xl font-extrabold">{overallCompliance}%</div>
+                                          <div className="text-sm font-medium opacity-90">Overall Unit Compliance</div>
                                         </div>
-                                     </div>
-                                     <div className="flex flex-col items-end gap-1">
-                                        <div className={`text-lg font-black ${stat.requiredDays === 0 ? 'text-gray-400' : stat.compliance >= 80 ? 'text-green-600' : stat.compliance >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
-                                           {stat.requiredDays === 0 ? 'N/A' : `${stat.compliance}%`}
+                                        <div className="text-right">
+                                          <div className="text-xl font-bold">{totalDone} / {totalRequired}</div>
+                                          <div className="text-xs opacity-75 uppercase tracking-wide">Total Audits</div>
                                         </div>
-                                        {stat.requiredDays > 0 && stat.compliance < 100 && (
-                                           <div className="text-[10px] uppercase font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                                             {stat.requiredDays - stat.doneCount} Missed
-                                           </div>
-                                        )}
                                      </div>
                                   </div>
-                                ))}
-                             </div>
-                           );
+
+                                  <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Monthly Area Breakdown</h3>
+                                  
+                                  {monthlyStats.map(stat => (
+                                    <div key={stat.key} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+                                       <div>
+                                          <h4 className="font-bold text-gray-800 text-base">{stat.title}</h4>
+                                          <div className="text-xs text-gray-500 mt-1 font-medium">
+                                            {stat.doneCount} done • {stat.closedCount} closed • {stat.daysInMonth} days
+                                          </div>
+                                       </div>
+                                       <div className="flex flex-col items-end gap-1">
+                                          <div className={`text-lg font-black ${stat.requiredDays === 0 ? 'text-gray-400' : stat.compliance >= 80 ? 'text-green-600' : stat.compliance >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
+                                             {stat.requiredDays === 0 ? 'N/A' : `${stat.compliance}%`}
+                                          </div>
+                                          {stat.requiredDays > 0 && stat.compliance < 100 && (
+                                             <div className="text-[10px] uppercase font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                                               {stat.requiredDays - stat.doneCount} Missed
+                                             </div>
+                                          )}
+                                       </div>
+                                    </div>
+                                  ))}
+                               </div>
+                             );
+                           } catch(e) {
+                             return <div className="p-4 text-center text-gray-500 text-sm">Please select a valid month to view stats.</div>;
+                           }
                         })()}
                       </div>
                     )}
@@ -1682,7 +1754,8 @@
                       </div>
                     ) : historyTab === 'logs' && (
                       currentLogs.map((log) => {
-                        const dateLogicStr = getLogDate(log).toISOString().split('T')[0];
+                        const logDate = getLogDate(log);
+                        const dateLogicStr = `${logDate.getFullYear()}-${(logDate.getMonth()+1).toString().padStart(2, '0')}-${logDate.getDate().toString().padStart(2, '0')}`;
 
                         if (log.type === 'unit_closure' || log.type === 'room_closure') {
                           const isUnit = log.type === 'unit_closure';
@@ -1771,8 +1844,8 @@
 
                         if (log.type === 'trolley_audit') {
                           const allItems = Object.keys(log.checklist || {});
-                          const missingItems = allItems.filter(k => !log.checklist[k].checked);
-                          const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                          const missingItems = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
+                          const expiringItems = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
                           const isPerfect = missingItems.length === 0;
 
                           return (
