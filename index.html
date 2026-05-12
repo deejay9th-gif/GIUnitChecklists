@@ -46,7 +46,8 @@
           onSnapshot, 
           query,
           doc,
-          deleteDoc
+          deleteDoc,
+          updateDoc
         } from 'firebase/firestore';
         import { 
           LayoutDashboard,
@@ -71,7 +72,10 @@
           CalendarX,
           Ban,
           BarChart3,
-          Stethoscope
+          Stethoscope,
+          ClipboardList,
+          ShieldAlert,
+          CheckSquare
         } from 'lucide-react';
 
         // --- Configuration ---
@@ -309,6 +313,12 @@
           const [isRoomClosed, setIsRoomClosed] = useState(false);
           const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
           const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
+          const [reportMonth, setReportMonth] = useState(new Date().toISOString().substring(0, 7));
+
+          // Action Board State
+          const [resolveModalLog, setResolveModalLog] = useState(null);
+          const [resolveNote, setResolveNote] = useState('');
+          const [resolveInitials, setResolveInitials] = useState('');
 
           // --- Auth Setup ---
           useEffect(() => {
@@ -362,6 +372,22 @@
 
           const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
+
+          const getLogIssues = (log) => {
+            if (log.type === 'trolley_audit') {
+              const allItems = Object.keys(log.checklist || {});
+              const missing = allItems.filter(k => !log.checklist[k]?.checked);
+              const expiring = allItems.filter(k => log.checklist[k]?.expiry && checkExpiryWarning(log.checklist[k].expiry, getLogDate(log).toISOString().split('T')[0]));
+              if (missing.length > 0 || expiring.length > 0) return { missing, expiring };
+            } else if (log.type === 'standard_audit') {
+              const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+              const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+              if (missingDaily.length > 0) return { missingDaily };
+            }
+            return null;
+          };
+
+          const pendingIssues = currentLogs.filter(log => getLogIssues(log) !== null && !log.resolved);
 
           const last7Days = Array.from({length: 7}, (_, i) => {
             const [year, month, day] = reportEndDate.split('-');
@@ -581,6 +607,29 @@
             }
           };
 
+          const handleResolveIssue = async (e) => {
+            e.preventDefault();
+            if (!resolveInitials.trim() || !resolveNote.trim()) return;
+            setSubmitting(true);
+            try {
+              const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', resolveModalLog.id);
+              await updateDoc(logRef, {
+                resolved: true,
+                resolvedBy: resolveInitials.toUpperCase(),
+                resolutionNote: resolveNote.trim(),
+                resolvedAt: new Date()
+              });
+              setResolveModalLog(null);
+              setResolveNote('');
+              setResolveInitials('');
+            } catch (err) {
+              console.error("Resolve error:", err);
+              setError("Failed to mark issue as resolved.");
+            } finally {
+              setSubmitting(false);
+            }
+          };
+
           const formatDate = (timestamp) => {
             if (!timestamp) return "";
             const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -744,6 +793,10 @@
                   if (expiringItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Expiring Soon/Expired:</strong> ${expiringItems.join(', ')}</div>`);
                   if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
                   
+                  if (log.resolved) {
+                    detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>✓ Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
+                  }
+
                   const finalDetails = detailsLines.length > 0 
                     ? `<div class="details-block">${detailsLines.join('')}</div>`
                     : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date. No notes.</span>`;
@@ -787,6 +840,10 @@
 
                 if (log.comment) {
                   detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                }
+
+                if (log.resolved) {
+                  detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>✓ Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
                 }
 
                 const finalDetails = detailsLines.length > 0 
@@ -910,6 +967,23 @@
                       </button>
 
                       <button 
+                        onClick={() => setView('actions')}
+                        className={`p-6 bg-white rounded-3xl shadow-sm border flex flex-col items-center text-center gap-3 transition-all active:scale-[0.98] ${pendingIssues.length > 0 ? 'border-orange-300 hover:shadow-orange-100 hover:border-orange-400' : 'border-gray-100 hover:shadow-md hover:border-blue-300'}`}
+                      >
+                        <div className={`p-4 rounded-2xl relative ${pendingIssues.length > 0 ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-500'}`}>
+                          <ShieldAlert className="w-8 h-8" />
+                          {pendingIssues.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                              {pendingIssues.length}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800">Action Board</div>
+                        </div>
+                      </button>
+
+                      <button 
                         onClick={() => setView('history')}
                         className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
                       >
@@ -923,21 +997,20 @@
                       
                       <button 
                         onClick={() => setView('qr')}
-                        className="col-span-2 p-5 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-row items-center gap-4 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
+                        className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
                       >
-                        <div className="bg-gray-50 p-3 rounded-2xl text-gray-500">
-                          <QrCode className="w-6 h-6" />
+                        <div className="bg-gray-50 p-4 rounded-2xl text-gray-500">
+                          <QrCode className="w-8 h-8" />
                         </div>
-                        <div className="text-left flex-1">
+                        <div>
                           <div className="font-bold text-gray-800">Unit QR Code</div>
-                          <div className="text-xs text-gray-500">Print & post for easy access</div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-gray-300" />
                       </button>
                     </div>
                   </div>
                 )}
 
+                {}
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
                     <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
@@ -1023,6 +1096,7 @@
                   </div>
                 )}
 
+                {}
                 {view === 'check' && (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className={`${selectedLocKey === 'bleed_trolley' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm`}>
@@ -1230,6 +1304,7 @@
                   </form>
                 )}
 
+                {}
                 {view === 'mark-closed' && (
                   <form onSubmit={handleClosureSubmit} className="space-y-6">
                     <div className="bg-gray-100 p-5 rounded-3xl border border-gray-200 flex items-center justify-between shadow-sm">
@@ -1300,7 +1375,13 @@
                          onClick={() => setHistoryTab('compliance')}
                          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'compliance' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
                        >
-                         Weekly Report
+                         Weekly
+                       </button>
+                       <button 
+                         onClick={() => setHistoryTab('monthly')}
+                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'monthly' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+                       >
+                         Monthly
                        </button>
                     </div>
 
@@ -1322,9 +1403,9 @@
 
                     <div className="flex items-center justify-between px-2 pt-4">
                       <h2 className="font-extrabold text-xl text-gray-800">
-                        {historyTab === 'logs' ? 'Daily Audits' : 'Weekly Overview'}
+                        {historyTab === 'logs' ? 'Daily Audits' : historyTab === 'compliance' ? 'Weekly Overview' : 'Monthly Summary'}
                       </h2>
-                      {currentLogs.length > 0 && (
+                      {historyTab === 'compliance' && currentLogs.length > 0 && (
                         <button 
                           onClick={exportToPDF}
                           className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
@@ -1455,6 +1536,130 @@
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                    
+                    {historyTab === 'monthly' && (
+                      <div className="space-y-4 pb-4">
+                        <div className="mt-4 flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-200">
+                          <div className="flex items-center gap-2">
+                             <CalendarDays className="w-5 h-5 text-blue-600" />
+                             <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wide">Audit Month</span>
+                          </div>
+                          <input 
+                            type="month" 
+                            value={reportMonth}
+                            max={new Date().toISOString().substring(0, 7)}
+                            onChange={(e) => setReportMonth(e.target.value)}
+                            className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                          />
+                        </div>
+
+                        {(() => {
+                           const [yearStr, monthStr] = reportMonth.split('-');
+                           const year = parseInt(yearStr);
+                           const month = parseInt(monthStr);
+                           const daysInMonth = new Date(year, month, 0).getDate();
+                           const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+
+                           const thisMonthLogs = currentLogs.filter(log => {
+                             const d = getLogDate(log);
+                             return d.getFullYear() === year && d.getMonth() === month - 1;
+                           });
+
+                           const toDateString = (date) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                           const unitClosureDays = new Set(thisMonthLogs.filter(l => l.type === 'unit_closure').map(l => toDateString(getLogDate(l))));
+
+                           const locationsToTrack = Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => ({ key: locKey, title: locData.title, type: 'standard' }));
+                           if (selectedUnit === 'Lady Sobell') {
+                             locationsToTrack.push({ key: 'bleed_trolley', title: 'GI Bleed Emergency Trolley', type: 'trolley' });
+                           }
+
+                           const monthlyStats = locationsToTrack.map((loc) => {
+                             if (loc.type === 'trolley') {
+                               let mondays = 0;
+                               for (let i = 1; i <= daysInMonth; i++) {
+                                 if (new Date(year, month - 1, i).getDay() === 1) mondays++;
+                               }
+                               const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key);
+                               const doneCount = areaLogs.length; 
+                               const compliance = mondays === 0 ? 100 : Math.min(100, Math.round((doneCount / mondays) * 100));
+                               return { key: loc.key, title: loc.title, requiredDays: mondays, doneCount, closedCount: 0, compliance, daysInMonth };
+                             }
+
+                             const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key || l.type === 'unit_closure');
+                             
+                             const closedDaysSet = new Set(unitClosureDays);
+                             areaLogs.filter(l => l.type === 'room_closure' && l.locationKey === loc.key).forEach(l => closedDaysSet.add(toDateString(getLogDate(l))));
+                             
+                             const completedDaysSet = new Set();
+                             areaLogs.filter(l => l.type !== 'unit_closure' && l.type !== 'room_closure' && l.type !== 'trolley_audit' && l.locationKey === loc.key).forEach(l => {
+                                const dailyKeys = Object.keys(l.checklist || {}).filter(k => k.startsWith('daily_'));
+                                const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => l.checklist[k]);
+                                if (isAllDone) {
+                                   completedDaysSet.add(toDateString(getLogDate(l)));
+                                }
+                             });
+
+                             let closedCount = 0;
+                             let doneCount = 0;
+                             for (let i = 1; i <= daysInMonth; i++) {
+                                const dStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                                if (closedDaysSet.has(dStr)) closedCount++;
+                                else if (completedDaysSet.has(dStr)) doneCount++;
+                             }
+
+                             const requiredDays = daysInMonth - closedCount;
+                             const compliance = requiredDays === 0 ? 100 : Math.round((doneCount / requiredDays) * 100);
+
+                             return { key: loc.key, title: loc.title, requiredDays, doneCount, closedCount, compliance, daysInMonth };
+                           });
+
+                           const totalRequired = monthlyStats.reduce((sum, stat) => sum + stat.requiredDays, 0);
+                           const totalDone = monthlyStats.reduce((sum, stat) => sum + stat.doneCount, 0);
+                           const overallCompliance = totalRequired === 0 ? 100 : Math.round((totalDone / totalRequired) * 100);
+
+                           return (
+                             <div className="space-y-4 animate-in fade-in duration-300">
+                                <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white">
+                                   <div className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{monthName} {year}</div>
+                                   <div className="flex items-end justify-between">
+                                      <div>
+                                        <div className="text-4xl font-extrabold">{overallCompliance}%</div>
+                                        <div className="text-sm font-medium opacity-90">Overall Unit Compliance</div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-xl font-bold">{totalDone} / {totalRequired}</div>
+                                        <div className="text-xs opacity-75 uppercase tracking-wide">Total Audits</div>
+                                      </div>
+                                   </div>
+                                </div>
+
+                                <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Monthly Area Breakdown</h3>
+                                
+                                {monthlyStats.map(stat => (
+                                  <div key={stat.key} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+                                     <div>
+                                        <h4 className="font-bold text-gray-800 text-base">{stat.title}</h4>
+                                        <div className="text-xs text-gray-500 mt-1 font-medium">
+                                          {stat.doneCount} done • {stat.closedCount} closed • {stat.daysInMonth} days
+                                        </div>
+                                     </div>
+                                     <div className="flex flex-col items-end gap-1">
+                                        <div className={`text-lg font-black ${stat.requiredDays === 0 ? 'text-gray-400' : stat.compliance >= 80 ? 'text-green-600' : stat.compliance >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
+                                           {stat.requiredDays === 0 ? 'N/A' : `${stat.compliance}%`}
+                                        </div>
+                                        {stat.requiredDays > 0 && stat.compliance < 100 && (
+                                           <div className="text-[10px] uppercase font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                                             {stat.requiredDays - stat.doneCount} Missed
+                                           </div>
+                                        )}
+                                     </div>
+                                  </div>
+                                ))}
+                             </div>
+                           );
+                        })()}
                       </div>
                     )}
                     
@@ -1658,6 +1863,21 @@
                                   "{log.comment}"
                                 </div>
                               )}
+
+                              {log.resolved && (
+                                <div className="mt-3 p-3 bg-green-50 rounded-2xl border border-green-200 text-sm text-green-800">
+                                  <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase font-black tracking-widest text-green-600">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Issue Resolved
+                                  </div>
+                                  <p className="font-medium">"{log.resolutionNote}"</p>
+                                  <p className="text-[10px] mt-1 opacity-70">By {log.resolvedBy} on {formatDate(log.resolvedAt)}</p>
+                                </div>
+                              )}
+                              {getLogIssues(log) !== null && !log.resolved && (
+                                <div className="mt-3 p-2 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-800 font-bold flex items-center gap-2">
+                                  <AlertCircle className="w-4 h-4"/> Pending Resolution
+                                </div>
+                              )}
                             </div>
                           );
                         }
@@ -1764,8 +1984,116 @@
                               "{log.comment}"
                             </div>
                           )}
+
+                          {log.resolved && (
+                            <div className="mt-3 p-3 bg-green-50 rounded-2xl border border-green-200 text-sm text-green-800">
+                              <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase font-black tracking-widest text-green-600">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Issue Resolved
+                              </div>
+                              <p className="font-medium">"{log.resolutionNote}"</p>
+                              <p className="text-[10px] mt-1 opacity-70">By {log.resolvedBy} on {formatDate(log.resolvedAt)}</p>
+                            </div>
+                          )}
+                          {getLogIssues(log) !== null && !log.resolved && (
+                            <div className="mt-3 p-2 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-800 font-bold flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4"/> Pending Resolution
+                            </div>
+                          )}
                         </div>
                         );
+                      })
+                    )}
+                  </div>
+                )}
+
+                {view === 'actions' && (
+                  <div className="space-y-4 pt-2 animate-in fade-in duration-300">
+                    <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-3xl shadow-lg text-white mb-6">
+                       <h2 className="text-2xl font-extrabold mb-1 tracking-tight">Action Board</h2>
+                       <p className="opacity-90 text-sm font-medium">Resolve pending unit issues</p>
+                    </div>
+
+                    {pendingIssues.length === 0 ? (
+                      <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm">
+                        <CheckSquare className="w-16 h-16 mx-auto mb-4 text-green-400" />
+                        <h3 className="font-extrabold text-lg text-gray-800 mb-1">All Clear!</h3>
+                        <p className="font-medium text-sm">There are no pending actions or missing items in {selectedUnit}.</p>
+                      </div>
+                    ) : (
+                      pendingIssues.map(log => {
+                         const issues = getLogIssues(log);
+                         return (
+                            <div key={log.id} className="bg-white p-5 rounded-3xl border border-orange-200 shadow-sm space-y-4">
+                               <div className="flex justify-between items-start">
+                                 <div>
+                                    <div className="text-[10px] uppercase tracking-widest font-black text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block mb-2">Pending Issue</div>
+                                    <h3 className="font-bold text-gray-900 text-lg leading-tight">{log.locationTitle}</h3>
+                                    <p className="text-xs text-gray-500 font-medium mt-1">Reported by <strong>{log.initials}</strong> on {formatDate(log.timestamp)}</p>
+                                 </div>
+                               </div>
+
+                               <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 space-y-2">
+                                  {issues.missingDaily && (
+                                     <div>
+                                        <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Missed Daily Tasks:</span>
+                                        <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.missingDaily.map(i => <li key={i}>{i}</li>)}</ul>
+                                     </div>
+                                  )}
+                                  {issues.missing && (
+                                     <div>
+                                        <span className="text-[10px] font-bold text-red-800 uppercase tracking-widest block mb-1">Missing Trolley Items:</span>
+                                        <ul className="text-sm text-red-700 list-disc list-inside font-medium">{issues.missing.map(i => <li key={i}>{i}</li>)}</ul>
+                                     </div>
+                                  )}
+                                  {issues.expiring && (
+                                     <div>
+                                        <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Expiring Soon:</span>
+                                        <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.expiring.map(i => <li key={i}>{i}</li>)}</ul>
+                                     </div>
+                                  )}
+                                  {log.comment && (
+                                     <div className="mt-2 pt-2 border-t border-orange-200">
+                                       <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest block mb-1">Staff Note:</span>
+                                       <p className="text-sm text-gray-700 italic">"{log.comment}"</p>
+                                     </div>
+                                  )}
+                               </div>
+
+                               {resolveModalLog?.id === log.id ? (
+                                  <form onSubmit={handleResolveIssue} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3 animate-in zoom-in-95 duration-200">
+                                     <h4 className="font-bold text-gray-800 text-sm">Resolve Action</h4>
+                                     <div className="flex gap-2">
+                                        <input 
+                                          type="text" 
+                                          placeholder="Initials" 
+                                          value={resolveInitials} 
+                                          onChange={e => setResolveInitials(e.target.value)} 
+                                          className="w-1/3 p-3 text-sm border border-gray-300 rounded-xl focus:ring focus:ring-blue-200 uppercase font-bold" 
+                                          required 
+                                        />
+                                        <input 
+                                          type="text" 
+                                          placeholder="Resolution Note (e.g. Restocked)" 
+                                          value={resolveNote} 
+                                          onChange={e => setResolveNote(e.target.value)} 
+                                          className="w-2/3 p-3 text-sm border border-gray-300 rounded-xl focus:ring focus:ring-blue-200" 
+                                          required 
+                                        />
+                                     </div>
+                                     <div className="flex gap-2">
+                                        <button type="button" onClick={() => setResolveModalLog(null)} className="flex-1 p-3 text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-all">Cancel</button>
+                                        <button type="submit" disabled={submitting} className="flex-1 p-3 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2">
+                                          {submitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CheckCircle2 className="w-4 h-4"/> Mark Resolved</>}
+                                        </button>
+                                     </div>
+                                  </form>
+                               ) : (
+                                  <button onClick={() => setResolveModalLog(log)} className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
+                                     Resolve Issue
+                                  </button>
+                               )}
+                            </div>
+                         );
                       })
                     )}
                   </div>
@@ -1810,6 +2138,7 @@
                 )}
               </main>
 
+              {}
               {/* Copyright Footnote */}
               <footer className="max-w-md mx-auto px-4 pb-8 pt-4 text-center">
                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
@@ -1832,17 +2161,26 @@
                     isActive={view === 'select-location' || view === 'check'} 
                     onClick={() => setView('select-location')} 
                   />
+                  <button 
+                    onClick={() => setView('actions')}
+                    type="button"
+                    className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 transition-all ${view === 'actions' ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    <div className={`mb-1 transition-transform ${view === 'actions' ? 'scale-110' : ''}`}>
+                      <ClipboardList className="w-6 h-6" />
+                      {pendingIssues.length > 0 && (
+                        <span className="absolute -top-1 right-3 bg-red-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
+                          {pendingIssues.length}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] tracking-wide ${view === 'actions' ? 'font-extrabold' : 'font-semibold'}`}>Actions</span>
+                  </button>
                   <NavItem 
                     icon={<CalendarDays className="w-6 h-6" />} 
                     label="Logs" 
                     isActive={view === 'history'} 
                     onClick={() => setView('history')} 
-                  />
-                  <NavItem 
-                    icon={<QrCode className="w-6 h-6" />} 
-                    label="QR" 
-                    isActive={view === 'qr'} 
-                    onClick={() => setView('qr')} 
                   />
                 </div>
               </nav>
