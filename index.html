@@ -1102,12 +1102,13 @@
                         return (
                           <button
                             key={key}
-                            onClick={() => startChecklist(key)}
+                            onClick={() => !isCompleted && !isClosed && startChecklist(key)}
+                            disabled={isCompleted || isClosed}
                             className={`w-full text-left p-5 shadow-sm border rounded-2xl flex items-center justify-between transition-all group ${
                               isClosed
                                 ? 'bg-gray-100 border-gray-200 opacity-90 cursor-not-allowed'
                                 : isCompleted 
-                                  ? 'bg-green-50 border-green-200 opacity-90' 
+                                  ? 'bg-green-50 border-green-200 opacity-90 cursor-not-allowed' 
                                   : 'bg-white border-gray-100 hover:border-blue-400 hover:shadow-md'
                             }`}
                           >
