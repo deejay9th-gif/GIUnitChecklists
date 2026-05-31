@@ -511,19 +511,49 @@
           // Dynamic Task Fetching 
           const getDailyTasks = (locKey, unit) => {
             if (!locKey || !CHECKLIST_DATA[locKey]) return [];
-            let tasks = CHECKLIST_DATA[locKey].daily || [];
+            // Create a fresh copy so we don't accidentally alter base data
+            let tasks = [...(CHECKLIST_DATA[locKey].daily || [])];
+            
             if (locKey === 'room1' && unit !== 'Lady Sobell') {
               tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
             }
             if (locKey === 'recovery' && unit !== 'Lady Sobell') {
               tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
             }
+            
+            // Remove emergency trolley for ALL units in Room 1 & Room 2
+            if (locKey === 'room1' || locKey === 'room2') {
+              tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
+            }
+
+            // Remove fridge for Lady Sobell Room 1 & Room 2
+            if (unit === 'Lady Sobell' && (locKey === 'room1' || locKey === 'room2')) {
+              tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+            }
+
+            // Add new Fridge check specifically to Lady Sobell Recovery
+            if (unit === 'Lady Sobell' && locKey === 'recovery') {
+              tasks.push("Clean and Check fridge temperature");
+            }
+            
             return tasks;
           };
 
-          const getWeeklyTasks = (locKey) => {
+          const getWeeklyTasks = (locKey, unit) => {
             if (!locKey || !CHECKLIST_DATA[locKey]) return [];
-            return CHECKLIST_DATA[locKey].weekly || [];
+            let tasks = [...(CHECKLIST_DATA[locKey].weekly || [])];
+            
+            // Remove emergency trolley for ALL units in Room 1 & Room 2
+            if (locKey === 'room1' || locKey === 'room2') {
+              tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
+            }
+
+            // Remove fridge for Lady Sobell Room 1 & Room 2
+            if (unit === 'Lady Sobell' && (locKey === 'room1' || locKey === 'room2')) {
+              tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+            }
+            
+            return tasks;
           };
 
           // --- Handlers ---
@@ -547,7 +577,7 @@
               } else {
                 const initialChecklist = {};
                 getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
-                getWeeklyTasks(key).forEach(item => initialChecklist[`weekly_${item}`] = false);
+                getWeeklyTasks(key, selectedUnit).forEach(item => initialChecklist[`weekly_${item}`] = false);
                 setChecklist(initialChecklist);
               }
               
@@ -1258,7 +1288,7 @@
                           ))}
                         </div>
 
-                        {getWeeklyTasks(selectedLocKey).length > 0 && (
+                        {getWeeklyTasks(selectedLocKey, selectedUnit).length > 0 && (
                           <div className="space-y-3">
                             <div className="flex items-center justify-between px-1">
                               <h3 className="text-xs uppercase font-extrabold text-blue-400 tracking-widest">Weekly Tasks</h3>
@@ -1268,7 +1298,7 @@
                                 </span>
                               )}
                             </div>
-                            {getWeeklyTasks(selectedLocKey).map((item) => {
+                            {getWeeklyTasks(selectedLocKey, selectedUnit).map((item) => {
                               const isMonday = new Date(auditDate).getDay() === 1;
                               return (
                                 <label 
