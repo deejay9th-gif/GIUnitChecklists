@@ -11,11 +11,15 @@
     <!-- Babel for React/JSX compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
+    <!-- ES Module Shims for older mobile browsers -->
+    <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+    
     <!-- Import Map for React, Lucide Icons, and Firebase -->
     <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
         "lucide-react": "https://esm.sh/lucide-react@0.292.0",
         "firebase/app": "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js",
@@ -34,54 +38,20 @@
         import { createRoot } from 'react-dom/client';
         import { initializeApp } from 'firebase/app';
         import { 
-          getAuth, 
-          signInAnonymously, 
-          signInWithCustomToken,
-          onAuthStateChanged 
+          getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged 
         } from 'firebase/auth';
         import { 
-          getFirestore, 
-          collection, 
-          addDoc, 
-          onSnapshot, 
-          query,
-          doc,
-          deleteDoc,
-          updateDoc
+          getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc
         } from 'firebase/firestore';
         import { 
-          LayoutDashboard,
-          ListChecks,
-          Activity,
-          ClipboardCheck, 
-          History, 
-          QrCode, 
-          CheckCircle2, 
-          Loader2, 
-          ArrowLeft,
-          User,
-          Clock,
-          MapPin,
-          ChevronRight,
-          AlertCircle,
-          FileText,
-          CalendarDays,
-          XCircle,
-          Trash2,
-          Lock,
-          CalendarX,
-          Ban,
-          BarChart3,
-          Stethoscope,
-          ClipboardList,
-          ShieldAlert,
-          CheckSquare
+          LayoutDashboard, ListChecks, Activity, ClipboardCheck, History, QrCode, 
+          CheckCircle2, Loader2, ArrowLeft, User, Clock, MapPin, ChevronRight, 
+          AlertCircle, FileText, CalendarDays, XCircle, Trash2, Lock, Ban, BarChart3, Stethoscope, CheckSquare
         } from 'lucide-react';
 
         // --- Configuration ---
         const ADMIN_PIN = "X135";
 
-        // --- Firebase Configuration ---
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
           apiKey: "AIza" + "SyCPzRnUIMxwB4ulifDI2I17cdIHG63IRxQ",
           authDomain: "gi-endoscopy-unit-checks.firebaseapp.com",
@@ -97,7 +67,6 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'gi-endoscopy-unit-checks';
 
-        // --- Checklist Data ---
         const CHECKLIST_DATA = {
           recovery: {
             title: "Recovery Area",
@@ -195,99 +164,39 @@
           }
         };
 
-        // --- Special Trolley Data ---
         const BLEED_TROLLEY_DATA = [
-          {
-            compartment: "Top Compartment",
-            items: [
-              { name: "Sterile water", qty: 3, hasExpiry: false },
-              { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" },
-              { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" },
-              { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" },
-              { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" },
-              { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" },
-              { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" },
-              { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" },
-              { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" },
-              { name: "Overtube (30 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" },
-              { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }
-            ]
-          },
-          {
-            compartment: "First Drawer",
-            items: [
-              { name: "Spray Nozzle", qty: 6, hasExpiry: false },
-              { name: "CLO test plate", qty: 3, hasExpiry: true, defaultExpiry: "2027-02" },
-              { name: "CLO reagent", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" },
-              { name: "C/S specimen pot", qty: 1, hasExpiry: false },
-              { name: "Sodium Chloride 10 ml", qty: 5, hasExpiry: true, defaultExpiry: "2029-07" },
-              { name: "Xylocaine 10%", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" },
-              { name: "Infacol", qty: 1, hasExpiry: true, defaultExpiry: "2029-02" },
-              { name: "Sterile gauze swab", qty: 1, hasExpiry: true, defaultExpiry: "2029-09" },
-              { name: "Sterile scissor", qty: 2, hasExpiry: true, defaultExpiry: "2026-04" },
-              { name: "Optilube gel", qty: 15, hasExpiry: true, defaultExpiry: "2030-03" },
-              { name: "Small mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-04" },
-              { name: "Large mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-10" },
-              { name: "Needle 18g (red)", qty: 4, hasExpiry: true, defaultExpiry: "2030-04" },
-              { name: "Needle 21g (green)", qty: 4, hasExpiry: true, defaultExpiry: "2028-02" }
-            ]
-          },
-          {
-            compartment: "Second Drawer",
-            items: [
-              { name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" },
-              { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" },
-              { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" },
-              { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" },
-              { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" },
-              { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" },
-              { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" },
-              { name: "Inco pad", qty: 4, hasExpiry: false },
-              { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" },
-              { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }
-            ]
-          },
-          {
-            compartment: "Third Drawer",
-            items: [
-              { name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" },
-              { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" },
-              { name: "Suction liner (blue)", qty: 2, hasExpiry: false },
-              { name: "Yankauer sucker", qty: 2, hasExpiry: false },
-              { name: "Suction connecting tube", qty: 3, hasExpiry: false },
-              { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }
-            ]
-          },
-          {
-            compartment: "Fourth Drawer",
-            items: [
-              { name: "XL clip (20mm)", qty: 3, hasExpiry: true, defaultExpiry: "2026-06" },
-              { name: "Large clip (16mm)", qty: 5, hasExpiry: true, defaultExpiry: "2028-07" },
-              { name: "Small clip (11mm)", qty: 4, hasExpiry: true, defaultExpiry: "2028-08" },
-              { name: "Biopsy forceps", qty: 2, hasExpiry: true, defaultExpiry: "2028-06" },
-              { name: "Biopsy forceps (Paediatric)", qty: 1, hasExpiry: true, defaultExpiry: "2027-09" },
-              { name: "Injector (25g)", qty: 3, hasExpiry: true, defaultExpiry: "2027-12" },
-              { name: "Injector (23g)", qty: 2, hasExpiry: true, defaultExpiry: "2026-11" }
-            ]
-          },
-          {
-            compartment: "Fifth Drawer",
-            items: [
-              { name: "Snare (10 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-05" },
-              { name: "Snare (15 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-08" },
-              { name: "Snare (25mm)", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" },
-              { name: "Snare (33mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-01" },
-              { name: "Grasping forceps (8.5mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" },
-              { name: "Purastat nozzle", qty: 3, hasExpiry: true, defaultExpiry: "2028-04" },
-              { name: "Roth net", qty: 2, hasExpiry: true, defaultExpiry: "2028-04" },
-              { name: "Talon grasping device", qty: 2, hasExpiry: true, defaultExpiry: "2027-12" },
-              { name: "Distal cap attachment (11.35)", qty: 2, hasExpiry: true, defaultExpiry: "2026-12" },
-              { name: "Hood", qty: 2, hasExpiry: true, defaultExpiry: "2025-10" },
-              { name: "Variceal Bander", qty: 2, hasExpiry: true, defaultExpiry: "2026-08" },
-              { name: "IPAD", qty: 1, hasExpiry: false }
-            ]
-          }
+          { compartment: "Top Compartment", items: [{ name: "Sterile water", qty: 3, hasExpiry: false }, { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" }, { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" }, { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" }, { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" }, { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Overtube (30 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" }, { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }] },
+          { compartment: "First Drawer", items: [{ name: "Spray Nozzle", qty: 6, hasExpiry: false }, { name: "CLO test plate", qty: 3, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "CLO reagent", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "C/S specimen pot", qty: 1, hasExpiry: false }, { name: "Sodium Chloride 10 ml", qty: 5, hasExpiry: true, defaultExpiry: "2029-07" }, { name: "Xylocaine 10%", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Infacol", qty: 1, hasExpiry: true, defaultExpiry: "2029-02" }, { name: "Sterile gauze swab", qty: 1, hasExpiry: true, defaultExpiry: "2029-09" }, { name: "Sterile scissor", qty: 2, hasExpiry: true, defaultExpiry: "2026-04" }, { name: "Optilube gel", qty: 15, hasExpiry: true, defaultExpiry: "2030-03" }, { name: "Small mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "Large mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-10" }, { name: "Needle 18g (red)", qty: 4, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Needle 21g (green)", qty: 4, hasExpiry: true, defaultExpiry: "2028-02" }] },
+          { compartment: "Second Drawer", items: [{ name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" }, { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" }, { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" }, { name: "Inco pad", qty: 4, hasExpiry: false }, { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" }, { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }] },
+          { compartment: "Third Drawer", items: [{ name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Suction liner (blue)", qty: 2, hasExpiry: false }, { name: "Yankauer sucker", qty: 2, hasExpiry: false }, { name: "Suction connecting tube", qty: 3, hasExpiry: false }, { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }] },
+          { compartment: "Fourth Drawer", items: [{ name: "XL clip (20mm)", qty: 3, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Large clip (16mm)", qty: 5, hasExpiry: true, defaultExpiry: "2028-07" }, { name: "Small clip (11mm)", qty: 4, hasExpiry: true, defaultExpiry: "2028-08" }, { name: "Biopsy forceps", qty: 2, hasExpiry: true, defaultExpiry: "2028-06" }, { name: "Biopsy forceps (Paediatric)", qty: 1, hasExpiry: true, defaultExpiry: "2027-09" }, { name: "Injector (25g)", qty: 3, hasExpiry: true, defaultExpiry: "2027-12" }, { name: "Injector (23g)", qty: 2, hasExpiry: true, defaultExpiry: "2026-11" }] },
+          { compartment: "Fifth Drawer", items: [{ name: "Snare (10 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-05" }, { name: "Snare (15 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-08" }, { name: "Snare (25mm)", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Snare (33mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-01" }, { name: "Grasping forceps (8.5mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Purastat nozzle", qty: 3, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Roth net", qty: 2, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Talon grasping device", qty: 2, hasExpiry: true, defaultExpiry: "2027-12" }, { name: "Distal cap attachment (11.35)", qty: 2, hasExpiry: true, defaultExpiry: "2026-12" }, { name: "Hood", qty: 2, hasExpiry: true, defaultExpiry: "2025-10" }, { name: "Variceal Bander", qty: 2, hasExpiry: true, defaultExpiry: "2026-08" }, { name: "IPAD", qty: 1, hasExpiry: false }] }
         ];
+
+        class ErrorBoundary extends React.Component {
+          constructor(props) {
+            super(props);
+            this.state = { hasError: false, error: null };
+          }
+          static getDerivedStateFromError(error) { return { hasError: true, error }; }
+          componentDidCatch(error, errorInfo) { console.error("App Crashed:", error, errorInfo); }
+          render() {
+            if (this.state.hasError) {
+              return (
+                <div className="p-8 bg-red-50 text-red-900 min-h-screen flex flex-col items-center justify-center text-center">
+                  <AlertCircle className="w-16 h-16 mb-4 text-red-500" />
+                  <h1 className="text-2xl font-black mb-2">App Failed to Load</h1>
+                  <p className="font-medium text-red-700 mb-4">A background error occurred. Please screenshot this and send it to your admin:</p>
+                  <pre className="text-left bg-white p-4 rounded-xl shadow-inner text-[10px] text-red-800 border border-red-200 w-full overflow-auto whitespace-pre-wrap">
+                    {this.state.error?.toString()}
+                  </pre>
+                  <button onClick={() => window.location.reload()} className="mt-6 bg-red-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg">Refresh App</button>
+                </div>
+              );
+            }
+            return this.props.children;
+          }
+        }
 
         const App = () => {
           const [user, setUser] = useState(null);
@@ -297,8 +206,12 @@
           const [loading, setLoading] = useState(true);
           const [submitting, setSubmitting] = useState(false);
           const [error, setError] = useState(null);
+          
           const [deleteConfirmId, setDeleteConfirmId] = useState(null);
           const [pinInput, setPinInput] = useState('');
+          const [resolveId, setResolveId] = useState(null);
+          const [resolveNote, setResolveNote] = useState('');
+          const [resolveInitials, setResolveInitials] = useState('');
 
           // Form State
           const [selectedLocKey, setSelectedLocKey] = useState(null);
@@ -312,14 +225,7 @@
           const [isRoomClosed, setIsRoomClosed] = useState(false);
           const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
           const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
-          const [reportMonth, setReportMonth] = useState(new Date().toISOString().substring(0, 7));
 
-          // Action Board State
-          const [resolveModalLog, setResolveModalLog] = useState(null);
-          const [resolveNote, setResolveNote] = useState('');
-          const [resolveInitials, setResolveInitials] = useState('');
-
-          // --- Auth Setup ---
           useEffect(() => {
             const initAuth = async () => {
               try {
@@ -330,154 +236,78 @@
                 }
               } catch (err) {
                 console.error("Auth error:", err);
-                setError("Failed to authenticate. Please check Firebase Auth settings.");
+                setError("Failed to authenticate.");
               }
             };
-
             initAuth();
-            const unsubscribe = onAuthStateChanged(auth, (u) => {
-              setUser(u);
-              setLoading(false);
-            });
+            const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
             return () => unsubscribe();
           }, []);
 
-          // --- Data Fetching ---
           useEffect(() => {
             if (!user) return;
             const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
             const q = query(logsRef);
             const unsubscribe = onSnapshot(q, (snapshot) => {
-              const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              const sortedData = data.sort((a, b) => {
-                const aTime = a.timestamp?.seconds || 0;
-                const bTime = b.timestamp?.seconds || 0;
-                return bTime - aTime;
-              });
-              setLogs(sortedData);
-            }, (err) => {
-              console.error("Firestore error:", err);
-              setError("Could not load history: " + err.message);
+              try {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const sortedData = data.sort((a, b) => {
+                  const timeA = a.timestamp?.seconds || (new Date(a.timestamp).getTime() / 1000) || 0;
+                  const timeB = b.timestamp?.seconds || (new Date(b.timestamp).getTime() / 1000) || 0;
+                  return timeB - timeA;
+                });
+                setLogs(sortedData);
+              } catch(err) { console.error("Error processing logs", err); }
             });
             return () => unsubscribe();
           }, [user]);
 
-          // --- Crash-Proof Date Helpers ---
-          const getLogDate = (log) => {
-            try {
-              if (!log || !log.timestamp) return new Date();
-              if (typeof log.timestamp.toDate === 'function') return log.timestamp.toDate();
-              if (log.timestamp.seconds) return new Date(log.timestamp.seconds * 1000);
-              const d = new Date(log.timestamp);
-              if (isNaN(d.getTime())) return new Date();
-              return d;
-            } catch (e) {
-              return new Date();
-            }
-          };
+          const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
 
+          // Crucial fix: Safe date formatter to prevent mobile crashes
           const formatDate = (timestamp) => {
+            if (!timestamp) return "";
             try {
-              if (!timestamp) return "";
-              const date = typeof timestamp.toDate === 'function' ? timestamp.toDate() : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
-              if (isNaN(date.getTime())) return "";
-              const pad = n => n.toString().padStart(2, '0');
-              return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+              const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+              const dStr = date.toLocaleDateString();
+              const tStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return `${dStr} ${tStr}`;
             } catch (e) {
-              return "";
+              return "Invalid Date";
             }
           };
 
-          const getDayName = (dateObj) => {
-            try {
-              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-              return days[dateObj.getDay()];
-            } catch (e) {
-              return "";
-            }
-          };
-
-          const getMonthName = (monthNum) => {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return months[monthNum - 1] || "";
+          const getLogDate = (log) => {
+            if (!log || !log.timestamp) return new Date();
+            return log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
           };
 
           const isSameDay = (d1, d2) => {
-            try {
-              if (!d1 || !d2 || isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
-              return d1.getFullYear() === d2.getFullYear() && 
-                     d1.getMonth() === d2.getMonth() && 
-                     d1.getDate() === d2.getDate();
-            } catch(e) {
-              return false;
-            }
+            if(!d1 || !d2) return false;
+            return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
           };
-
-          // --- Helpers ---
-          const currentLogs = logs.filter(log => log && (log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell')));
 
           const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
-          const checkExpiryWarning = (expiryStr, auditDateStr) => {
-            try {
-              if (!expiryStr || typeof expiryStr !== 'string' || !auditDateStr || typeof auditDateStr !== 'string') return false; 
-              
-              const expParts = expiryStr.split('-');
-              if (expParts.length < 2) return false;
-              const expDate = new Date(parseInt(expParts[0], 10), parseInt(expParts[1], 10) - 1, 1); 
-              
-              const audParts = auditDateStr.split('-');
-              if (audParts.length < 3) return false;
-              const audDate = new Date(parseInt(audParts[0], 10), parseInt(audParts[1], 10) - 1, parseInt(audParts[2], 10));
-              
-              const thresholdDate = new Date(audDate);
-              thresholdDate.setMonth(thresholdDate.getMonth() + 1);
-              
-              return expDate <= thresholdDate;
-            } catch (e) {
-              return false;
-            }
-          };
-
-          const getLogIssues = (log) => {
-            try {
-              if (!log) return null;
-              if (log.type === 'trolley_audit') {
-                const allItems = Object.keys(log.checklist || {});
-                const missing = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
-                
-                const logDate = getLogDate(log);
-                const safeAuditDateStr = `${logDate.getFullYear()}-${(logDate.getMonth() + 1).toString().padStart(2, '0')}-${logDate.getDate().toString().padStart(2, '0')}`;
-                
-                const expiring = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, safeAuditDateStr));
-                if (missing.length > 0 || expiring.length > 0) return { missing, expiring };
-              } else if (log.type === 'standard_audit') {
-                const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-                const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
-                if (missingDaily.length > 0) return { missingDaily };
-              }
-              return null;
-            } catch (e) {
-              return null;
-            }
-          };
-
-          const pendingIssues = currentLogs.filter(log => log && !log.resolved && getLogIssues(log) !== null);
-
-          const last7Days = Array.from({length: 7}, (_, i) => {
-            try {
-              const safeEndDate = (reportEndDate && typeof reportEndDate === 'string') ? reportEndDate : new Date().toISOString().split('T')[0];
-              const parts = safeEndDate.split('-');
-              const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-              d.setDate(d.getDate() - i);
-              return d;
-            } catch(e) {
-              return new Date();
-            }
+          // Determine Pending Action Items
+          const actionItems = currentLogs.filter(log => {
+             if (log.type === 'unit_closure' || log.type === 'room_closure' || log.isResolved) return false;
+             if (log.type === 'trolley_audit') {
+                 return Object.values(log.checklist || {}).some(item => !item.checked);
+             } else {
+                 const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+                 return dailyKeys.length > 0 && !dailyKeys.every(k => log.checklist[k]);
+             }
           });
 
-          // Calculate Data for Weekly Performance Graph
+          const last7Days = Array.from({length: 7}, (_, i) => {
+            const [year, month, day] = reportEndDate.split('-');
+            const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            d.setDate(d.getDate() - i);
+            return d;
+          });
+
           const weeklyChartData = last7Days.map(d => {
             const dayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), d));
             const isUnitClosed = dayLogs.some(log => log.type === 'unit_closure');
@@ -488,274 +318,138 @@
                 Object.keys(CHECKLIST_DATA).forEach(locKey => {
                     const areaLog = dayLogs.find(log => log.locationKey === locKey && log.type !== 'trolley_audit');
                     if (areaLog) {
-                        if (areaLog.type === 'room_closure') {
-                            completed++; 
-                        } else {
+                        if (areaLog.type === 'room_closure') completed++;
+                        else {
                             const dailyKeys = Object.keys(areaLog.checklist || {}).filter(k => k.startsWith('daily_'));
-                            const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => areaLog.checklist[k]);
-                            if (isAllDone) completed++;
+                            if (dailyKeys.length === 0 || dailyKeys.every(k => areaLog.checklist[k])) completed++;
                         }
                     }
                 });
             }
-
-            return {
-                date: d,
-                isUnitClosed,
-                percentage: isUnitClosed || totalAreas === 0 ? 0 : Math.round((completed / totalAreas) * 100),
-                completed,
-                totalAreas
-            };
+            return { date: d, isUnitClosed, percentage: isUnitClosed ? 0 : Math.round((completed / totalAreas) * 100), completed, totalAreas };
           }).reverse(); 
 
-          // Dynamic Task Fetching 
           const getDailyTasks = (locKey, unit) => {
-            if (!locKey || !CHECKLIST_DATA[locKey]) return [];
-            // Create a fresh copy so we don't accidentally alter base data
-            let tasks = [...(CHECKLIST_DATA[locKey].daily || [])];
-            
-            if (locKey === 'room1' && unit !== 'Lady Sobell') {
-              tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
-            }
-            if (locKey === 'recovery' && unit !== 'Lady Sobell') {
-              tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
-            }
-            
-            // Remove emergency trolley for ALL units in Room 1 & Room 2
+            let tasks = [...(CHECKLIST_DATA[locKey]?.daily || [])];
             if (locKey === 'room1' || locKey === 'room2') {
               tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
+              if (unit === 'Lady Sobell') tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
             }
-
-            // Remove fridge for Lady Sobell Room 1 & Room 2
-            if (unit === 'Lady Sobell' && (locKey === 'room1' || locKey === 'room2')) {
-              tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+            if (locKey === 'room1' && unit !== 'Lady Sobell') tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
+            if (locKey === 'recovery' && unit !== 'Lady Sobell') tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
+            if (locKey === 'recovery' && unit === 'Lady Sobell') {
+              if (!tasks.includes('Clean and Check fridge temperature')) tasks.push('Clean and Check fridge temperature');
             }
-
-            // Add new Fridge check specifically to Lady Sobell Recovery
-            if (unit === 'Lady Sobell' && locKey === 'recovery') {
-              tasks.push("Clean and Check fridge temperature");
-            }
-            
             return tasks;
           };
 
           const getWeeklyTasks = (locKey, unit) => {
-            if (!locKey || !CHECKLIST_DATA[locKey]) return [];
-            let tasks = [...(CHECKLIST_DATA[locKey].weekly || [])];
-            
-            // Remove emergency trolley for ALL units in Room 1 & Room 2
+            let tasks = [...(CHECKLIST_DATA[locKey]?.weekly || [])];
             if (locKey === 'room1' || locKey === 'room2') {
               tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
+              if (unit === 'Lady Sobell') tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
             }
-
-            // Remove fridge for Lady Sobell Room 1 & Room 2
-            if (unit === 'Lady Sobell' && (locKey === 'room1' || locKey === 'room2')) {
-              tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
-            }
-            
             return tasks;
           };
 
-          // --- Handlers ---
+          const checkExpiryWarning = (expiryStr, auditDateStr) => {
+            if (!expiryStr) return false; 
+            const [expYear, expMonth] = expiryStr.split('-');
+            const expDate = new Date(parseInt(expYear), parseInt(expMonth) - 1, 1); 
+            const [audYear, audMonth, audDay] = auditDateStr.split('-');
+            const audDate = new Date(parseInt(audYear), parseInt(audMonth) - 1, parseInt(audDay));
+            const thresholdDate = new Date(audDate);
+            thresholdDate.setMonth(thresholdDate.getMonth() + 1);
+            return expDate <= thresholdDate;
+          };
+
           const startChecklist = (key) => {
-            try {
-              setSelectedLocKey(key);
-              setComment('');
-              setIsRoomClosed(false); 
-              
-              const todayStr = new Date().toISOString().split('T')[0];
-              setAuditDate(todayStr); 
-
-              if (key === 'bleed_trolley') {
-                const initialTrolley = {};
-                BLEED_TROLLEY_DATA.forEach(comp => {
-                  comp.items.forEach(item => {
-                    initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' };
-                  });
-                });
-                setChecklist(initialTrolley);
-              } else {
-                const initialChecklist = {};
-                getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
-                getWeeklyTasks(key, selectedUnit).forEach(item => initialChecklist[`weekly_${item}`] = false);
-                setChecklist(initialChecklist);
-              }
-              
-              setView('check');
-            } catch(e) {
-              setError("Failed to start checklist. Please refresh.");
+            setSelectedLocKey(key); setComment(''); setIsRoomClosed(false); setAuditDate(new Date().toISOString().split('T')[0]); 
+            if (key === 'bleed_trolley') {
+              const initialTrolley = {};
+              BLEED_TROLLEY_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
+              setChecklist(initialTrolley);
+            } else {
+              const initialChecklist = {};
+              getDailyTasks(key, selectedUnit).forEach(item => initialChecklist[`daily_${item}`] = false);
+              getWeeklyTasks(key, selectedUnit).forEach(item => initialChecklist[`weekly_${item}`] = false);
+              setChecklist(initialChecklist);
             }
+            setView('check');
           };
 
-          const handleToggle = (itemKey) => {
-            setChecklist(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
-          };
-
-          const handleTrolleyCheck = (name, checked) => {
-            setChecklist(prev => ({
-              ...prev,
-              [name]: { ...prev[name], checked }
-            }));
-          };
-
-          const handleTrolleyExpiry = (name, expiry) => {
-            setChecklist(prev => ({
-              ...prev,
-              [name]: { ...prev[name], expiry }
-            }));
-          };
+          const handleToggle = (itemKey) => setChecklist(prev => ({ ...prev, [itemKey]: !prev[itemKey] }));
+          const handleTrolleyCheck = (name, checked) => setChecklist(prev => ({ ...prev, [name]: { ...prev[name], checked } }));
+          const handleTrolleyExpiry = (name, expiry) => setChecklist(prev => ({ ...prev, [name]: { ...prev[name], expiry } }));
 
           const handleDelete = async (logId) => {
-            if (pinInput !== ADMIN_PIN) {
-              setError("Invalid Admin PIN. Deletion cancelled.");
-              setPinInput('');
-              return;
-            }
-
+            if (pinInput !== ADMIN_PIN) { setError("Invalid Admin PIN."); setPinInput(''); return; }
             try {
-              const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', logId);
-              await deleteDoc(logRef);
-              setDeleteConfirmId(null);
-              setPinInput('');
-              setError(null);
-            } catch (err) {
-              console.error("Delete error:", err);
-              setError("Failed to delete entry. Check permissions.");
-            }
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', logId));
+              setDeleteConfirmId(null); setPinInput(''); setError(null);
+            } catch (err) { setError("Failed to delete entry."); }
+          };
+
+          const handleResolve = async (logId) => {
+            if (!resolveInitials.trim() || !resolveNote.trim()) return;
+            try {
+               await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', logId), {
+                  isResolved: true, resolvedBy: resolveInitials.toUpperCase(), resolveNote: resolveNote.trim(), resolvedAt: new Date()
+               });
+               setResolveId(null); setResolveInitials(''); setResolveNote('');
+            } catch(err) { setError("Failed to resolve action."); }
           };
 
           const handleSubmit = async (e) => {
             e.preventDefault();
             if (!initials.trim()) return;
-            
-            setSubmitting(true);
-            setError(null);
-
+            setSubmitting(true); setError(null);
             try {
-              const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
-              
-              const safeAuditDate = (auditDate && typeof auditDate === 'string') ? auditDate : new Date().toISOString().split('T')[0];
-              const parts = safeAuditDate.split('-');
+              const [year, month, day] = auditDate.split('-');
               const targetTimestamp = new Date();
-              if (parts.length === 3) {
-                 targetTimestamp.setFullYear(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-              }
-              
-              const isToday = safeAuditDate === new Date().toISOString().split('T')[0];
-              if (!isToday) {
-                targetTimestamp.setHours(12, 0, 0, 0);
-              }
+              targetTimestamp.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+              const isToday = auditDate === new Date().toISOString().split('T')[0];
+              if (!isToday) targetTimestamp.setHours(12, 0, 0, 0);
               
               const payload = {
-                initials: initials.toUpperCase(),
-                locationKey: selectedLocKey,
-                locationTitle: selectedLocKey === 'bleed_trolley' ? "GI Bleed Emergency Trolley" : (CHECKLIST_DATA[selectedLocKey]?.title || "Unknown"),
-                unit: selectedUnit,
-                comment: comment.trim(),
-                timestamp: targetTimestamp,
-                userId: user.uid,
-                isLateEntry: !isToday,
-                type: selectedLocKey === 'bleed_trolley' ? 'trolley_audit' : 'standard_audit'
+                initials: initials.toUpperCase(), locationKey: selectedLocKey,
+                locationTitle: selectedLocKey === 'bleed_trolley' ? "GI Bleed Emergency Trolley" : CHECKLIST_DATA[selectedLocKey].title,
+                unit: selectedUnit, comment: comment.trim(), timestamp: targetTimestamp, userId: user.uid,
+                isLateEntry: !isToday, type: selectedLocKey === 'bleed_trolley' ? 'trolley_audit' : 'standard_audit'
               };
 
-              if (isRoomClosed && selectedLocKey !== 'bleed_trolley') {
-                payload.type = 'room_closure';
-              } else {
-                payload.checklist = checklist;
-              }
+              if (isRoomClosed && selectedLocKey !== 'bleed_trolley') payload.type = 'room_closure';
+              else payload.checklist = checklist;
 
-              await addDoc(logsRef, payload);
-
-              setInitials('');
-              setComment('');
-              setHistoryTab(selectedLocKey === 'bleed_trolley' ? 'logs' : 'compliance');
-              setView('history');
-            } catch (err) {
-              console.error("Submission error:", err);
-              setError("Failed to save checklist.");
-            } finally {
-              setSubmitting(false);
-            }
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs'), payload);
+              setInitials(''); setComment(''); setHistoryTab(selectedLocKey === 'bleed_trolley' ? 'logs' : 'compliance'); setView('history');
+            } catch (err) { setError("Failed to save checklist."); } finally { setSubmitting(false); }
           };
 
           const handleClosureSubmit = async (e) => {
             e.preventDefault();
             if (!initials.trim()) return;
-            
-            setSubmitting(true);
-            setError(null);
-
+            setSubmitting(true); setError(null);
             try {
-              const safeClosureDate = (closureDate && typeof closureDate === 'string') ? closureDate : new Date().toISOString().split('T')[0];
-              const parts = safeClosureDate.split('-');
-              const targetTimestamp = parts.length === 3 
-                  ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10), 12, 0, 0)
-                  : new Date();
-              const isToday = safeClosureDate === new Date().toISOString().split('T')[0];
-
-              const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs');
-              await addDoc(logsRef, {
-                type: 'unit_closure',
-                initials: initials.toUpperCase(),
-                unit: selectedUnit,
-                comment: closureReason.trim(),
-                timestamp: targetTimestamp,
-                userId: user.uid,
-                isLateEntry: !isToday
+              const [year, month, day] = closureDate.split('-');
+              const targetTimestamp = new Date(year, month - 1, day, 12, 0, 0);
+              const isToday = closureDate === new Date().toISOString().split('T')[0];
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist_logs'), {
+                type: 'unit_closure', initials: initials.toUpperCase(), unit: selectedUnit, comment: closureReason.trim(),
+                timestamp: targetTimestamp, userId: user.uid, isLateEntry: !isToday
               });
-
-              setInitials('');
-              setClosureReason('');
-              setClosureDate(new Date().toISOString().split('T')[0]);
-              setHistoryTab('logs');
-              setView('history');
-            } catch (err) {
-              console.error("Submission error:", err);
-              setError("Failed to record unit closure.");
-            } finally {
-              setSubmitting(false);
-            }
-          };
-
-          const handleResolveIssue = async (e) => {
-            e.preventDefault();
-            if (!resolveInitials.trim() || !resolveNote.trim() || !resolveModalLog) return;
-            setSubmitting(true);
-            try {
-              const logRef = doc(db, 'artifacts', appId, 'public', 'data', 'checklist_logs', resolveModalLog.id);
-              await updateDoc(logRef, {
-                resolved: true,
-                resolvedBy: resolveInitials.toUpperCase(),
-                resolutionNote: resolveNote.trim(),
-                resolvedAt: new Date()
-              });
-              setResolveModalLog(null);
-              setResolveNote('');
-              setResolveInitials('');
-            } catch (err) {
-              console.error("Resolve error:", err);
-              setError("Failed to mark issue as resolved.");
-            } finally {
-              setSubmitting(false);
-            }
+              setInitials(''); setClosureReason(''); setClosureDate(new Date().toISOString().split('T')[0]);
+              setHistoryTab('logs'); setView('history');
+            } catch (err) { setError("Failed to record unit closure."); } finally { setSubmitting(false); }
           };
 
           const exportToPDF = () => {
             if (currentLogs.length === 0) return;
-
             const printWindow = window.open('', '_blank');
-            if (!printWindow) {
-              setError("Please allow pop-ups to generate the PDF report.");
-              return;
-            }
+            if (!printWindow) { setError("Please allow pop-ups to generate the PDF report."); return; }
             
-            const formatSafeDate = (d) => {
-                const pad = n => n.toString().padStart(2, '0');
-                return `${pad(d.getDate())} ${getMonthName(d.getMonth() + 1)} ${d.getFullYear()}`;
-            };
-            
-            const oldestDate = formatSafeDate(last7Days[6]);
-            const newestDate = formatSafeDate(last7Days[0]);
+            const oldestDate = last7Days[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const newestDate = last7Days[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
             const reportLogs = currentLogs.filter(log => {
               const logDate = getLogDate(log);
@@ -767,59 +461,33 @@
                 <h2 style="color: #334155; font-size: 16px; margin-bottom: 15px; font-family: sans-serif;">Weekly Matrix (Area Breakdown)</h2>
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: sans-serif;">
                   <thead>
-                    <tr>
-                      <th style="width: 25%; text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">Location</th>
+                    <tr><th style="width: 25%; text-align: left; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">Location</th>
             `;
             
             const reversedDays = [...last7Days].reverse();
-            reversedDays.forEach(d => {
-              complianceHtml += `<th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">${getDayName(d)}, ${d.getDate()} ${getMonthName(d.getMonth()+1)}</th>`;
-            });
+            reversedDays.forEach(d => { complianceHtml += `<th style="text-align: center; padding: 10px; border-bottom: 2px solid #cbd5e1; color: #475569;">${d.toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'})}</th>`; });
             complianceHtml += `</tr></thead><tbody>`;
 
             Object.entries(CHECKLIST_DATA).forEach(([locKey, locData]) => {
               complianceHtml += `<tr><td style="padding: 10px; border-bottom: 1px solid #e2e8f0;"><strong>${locData.title}</strong></td>`;
               reversedDays.forEach(d => {
-                const closureLog = currentLogs.find(log => {
-                  const logDate = getLogDate(log);
-                  return (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(logDate, d);
-                });
+                const closureLog = currentLogs.find(log => (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(getLogDate(log), d));
+                if (closureLog) { complianceHtml += `<td style="color: #64748b; font-size: 11px; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc;">Closed</td>`; return; }
 
-                if (closureLog) {
-                  complianceHtml += `<td style="color: #64748b; font-size: 11px; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc;">Closed</td>`;
-                  return;
-                }
-
-                const standardLog = currentLogs.find(log => {
-                  const logDate = getLogDate(log);
-                  return log.type !== 'unit_closure' && 
-                         log.type !== 'room_closure' && 
-                         log.type !== 'trolley_audit' && 
-                         isSameDay(logDate, d) && 
-                         log.locationKey === locKey;
-                });
-                
+                const standardLog = currentLogs.find(log => log.type !== 'unit_closure' && log.type !== 'room_closure' && log.type !== 'trolley_audit' && isSameDay(getLogDate(log), d) && log.locationKey === locKey);
                 if (standardLog) {
                   const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
                   const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => standardLog.checklist[k]);
-                  if (isAllDone) {
-                    complianceHtml += `<td style="color: #15803d; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f0fdf4;">Done</td>`;
-                  } else {
-                    complianceHtml += `<td style="color: #b45309; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fffbeb;">Incomplete</td>`;
-                  }
-                } else {
-                  complianceHtml += `<td style="color: #b91c1c; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fef2f2;">Missing</td>`;
-                }
+                  if (isAllDone) complianceHtml += `<td style="color: #15803d; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #f0fdf4;">Done</td>`;
+                  else complianceHtml += `<td style="color: #b45309; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fffbeb;">Incomplete</td>`;
+                } else complianceHtml += `<td style="color: #b91c1c; font-weight: bold; text-align: center; padding: 10px; border-bottom: 1px solid #e2e8f0; background-color: #fef2f2;">Missing</td>`;
               });
               complianceHtml += `</tr>`;
             });
             complianceHtml += `</tbody></table></div>`;
 
             let html = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <title>${selectedUnit} - Weekly Audit Report</title>
+              <!DOCTYPE html><html><head><title>${selectedUnit} - Weekly Audit Report</title>
                 <style>
                   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; line-height: 1.5; }
                   h1 { color: #1e40af; text-align: center; margin-bottom: 5px; font-size: 26px; font-weight: 800; text-transform: uppercase; }
@@ -834,184 +502,81 @@
                   .bg-red { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
                   .bg-orange { background-color: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
                   .bg-gray { background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; }
-                  .date-cell { white-space: nowrap; width: 14%; }
+                  .date-cell { white-space: nowrap; width: 12%; }
                   .details-block { display: flex; flex-direction: column; gap: 6px; }
                 </style>
-              </head>
-              <body>
-                <h1>Weekly Audit Report</h1>
-                <div class="subtitle">${selectedUnit} - GI Unit Daily Checklist</div>
+              </head><body>
+                <h1>Weekly Audit Report</h1><div class="subtitle">${selectedUnit} - GI Unit Daily Checklist</div>
                 <div class="date-range">Report Period: ${oldestDate} &mdash; ${newestDate}</div>
-                
                 ${complianceHtml}
-
                 <h2 style="color: #334155; font-size: 18px; margin-top: 40px; margin-bottom: 5px;">Detailed Log Trail</h2>
-                <table class="logs-table">
-                  <thead>
-                    <tr>
-                      <th>Date / Time</th>
-                      <th style="width: 15%">Location</th>
-                      <th style="width: 10%">Staff</th>
-                      <th style="width: 15%">Status</th>
-                      <th style="width: 46%">Details & Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <table class="logs-table"><thead><tr><th>Date / Time</th><th style="width: 15%">Location</th><th style="width: 10%">Staff</th><th style="width: 15%">Status</th><th style="width: 48%">Details & Notes</th></tr></thead><tbody>
             `;
 
-            if (reportLogs.length === 0) {
-              html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">No audit records found during this 7-day period.</td></tr>`;
-            } else {
+            if (reportLogs.length === 0) html += `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b; font-style: italic;">No audit records found.</td></tr>`;
+            else {
               reportLogs.forEach(log => {
                 const dateObj = getLogDate(log);
-                const dateStr = formatDate(dateObj);
-                
-                // Extremely safe date string generation for comparisons
-                const pad = n => n.toString().padStart(2, '0');
-                const dateLogicStr = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
-                
-                const lateEntryHtml = log.isLateEntry ? `<div style="color: #ea580c; font-size: 9px; font-weight: bold; margin-top: 4px; text-transform: uppercase;">Late Entry</div>` : '';
+                const dateStr = dateObj.toLocaleDateString();
+                const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateLogicStr = dateObj.toISOString().split('T')[0];
+                const lateEntryHtml = ''; // Hidden intentionally for clean audits
                 
                 if (log.type === 'unit_closure' || log.type === 'room_closure') {
                   const isUnit = log.type === 'unit_closure';
                   const statusBadge = `<span class="badge bg-gray">${isUnit ? 'Not Running' : 'Room Closed'}</span>`;
                   const detailsText = log.comment ? `<strong>Reason:</strong> ${log.comment}` : '<em>No reason provided</em>';
-                  
-                  html += `
-                    <tr>
-                      <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
-                      <td><strong>${isUnit ? 'Entire Unit' : log.locationTitle}</strong></td>
-                      <td>${log.initials}</td>
-                      <td>${statusBadge}</td>
-                      <td style="color: #475569;">${detailsText}</td>
-                    </tr>
-                  `;
+                  html += `<tr><td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td><td><strong>${isUnit ? 'Entire Unit' : log.locationTitle}</strong></td><td>${log.initials}</td><td>${statusBadge}</td><td style="color: #475569;">${detailsText}</td></tr>`;
                   return;
                 }
 
                 if (log.type === 'trolley_audit') {
                   const allItems = Object.keys(log.checklist || {});
-                  const missingItems = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
-                  const expiringItems = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
-                  
-                  const statusBadge = missingItems.length === 0 
-                    ? `<span class="badge bg-green">Fully Stocked</span>` 
-                    : `<span class="badge bg-red">Missing (${missingItems.length})</span>`;
-
+                  const missingItems = allItems.filter(k => !log.checklist[k].checked);
+                  const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                  const statusBadge = missingItems.length === 0 ? `<span class="badge bg-green">Fully Stocked</span>` : `<span class="badge bg-red">Missing (${missingItems.length})</span>`;
                   let detailsLines = [];
                   if (missingItems.length > 0) detailsLines.push(`<div style="color: #b91c1c;"><strong>Missing:</strong> ${missingItems.join(', ')}</div>`);
                   if (expiringItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Expiring Soon/Expired:</strong> ${expiringItems.join(', ')}</div>`);
                   if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                  if (log.isResolved) detailsLines.push(`<div style="color: #166534; margin-top: 4px; padding: 4px; background-color: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;"><strong>✓ Resolved by ${log.resolvedBy}:</strong> ${log.resolveNote}</div>`);
                   
-                  if (log.resolved) {
-                    detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>&check; Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
-                  }
-
-                  const finalDetails = detailsLines.length > 0 
-                    ? `<div class="details-block">${detailsLines.join('')}</div>`
-                    : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date. No notes.</span>`;
-
-                  html += `
-                    <tr>
-                      <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
-                      <td><strong>${log.locationTitle}</strong></td>
-                      <td>${log.initials}</td>
-                      <td>${statusBadge}</td>
-                      <td>${finalDetails}</td>
-                    </tr>
-                  `;
+                  const finalDetails = detailsLines.length > 0 ? `<div class="details-block">${detailsLines.join('')}</div>` : `<span style="color: #94a3b8; font-style: italic;">All items present and in-date.</span>`;
+                  html += `<tr><td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td><td><strong>${log.locationTitle}</strong></td><td>${log.initials}</td><td>${statusBadge}</td><td>${finalDetails}</td></tr>`;
                   return;
                 }
 
-                // Handle Standard Audits
                 const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-                const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
-                const dailyTotal = dailyKeys.length;
-                const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
+                const isAllDailyDone = dailyKeys.length === 0 || dailyKeys.every(k => log.checklist[k]);
                 const missingDailyItems = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
-
-                const statusBadge = isAllDailyDone 
-                  ? `<span class="badge bg-green">Completed</span>`
-                  : `<span class="badge bg-orange">Incomplete (${dailyDone}/${dailyTotal})</span>`;
-
+                const statusBadge = isAllDailyDone ? `<span class="badge bg-green">Completed</span>` : `<span class="badge bg-orange">Incomplete</span>`;
                 let detailsLines = [];
+                if (!isAllDailyDone && missingDailyItems.length > 0) detailsLines.push(`<div style="color: #c2410c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
+                const weeklyDoneList = Object.entries(log.checklist || {}).filter(([k, v]) => k.startsWith('weekly_') && v).map(([k]) => k.replace('weekly_', ''));
+                if (weeklyDoneList.length > 0) detailsLines.push(`<div style="color: #1d4ed8;"><strong>Weekly Tasks Done:</strong> ${weeklyDoneList.join(', ')}</div>`);
+                if (log.comment) detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
+                if (log.isResolved) detailsLines.push(`<div style="color: #166534; margin-top: 4px; padding: 4px; background-color: #f0fdf4; border-radius: 4px; border: 1px solid #bbf7d0;"><strong>✓ Resolved by ${log.resolvedBy}:</strong> ${log.resolveNote}</div>`);
                 
-                if (!isAllDailyDone && missingDailyItems.length > 0) {
-                  detailsLines.push(`<div style="color: #c2410c;"><strong>Missed Daily:</strong> ${missingDailyItems.join(', ')}</div>`);
-                }
-
-                const weeklyDoneList = Object.entries(log.checklist || {})
-                  .filter(([k, v]) => k.startsWith('weekly_') && v)
-                  .map(([k]) => k.replace('weekly_', ''));
-
-                if (weeklyDoneList.length > 0) {
-                  detailsLines.push(`<div style="color: #1d4ed8;"><strong>Weekly Tasks Done:</strong> ${weeklyDoneList.join(', ')}</div>`);
-                }
-
-                if (log.comment) {
-                  detailsLines.push(`<div style="color: #334155;"><strong>Notes:</strong> <em>"${log.comment}"</em></div>`);
-                }
-
-                if (log.resolved) {
-                  detailsLines.push(`<div style="color: #166534; margin-top: 4px;"><strong>&check; Issue Resolved:</strong> <em>"${log.resolutionNote}"</em> (by ${log.resolvedBy})</div>`);
-                }
-
-                const finalDetails = detailsLines.length > 0 
-                  ? `<div class="details-block">${detailsLines.join('')}</div>`
-                  : `<span style="color: #94a3b8; font-style: italic;">Standard tasks completed. No notes.</span>`;
-
-                html += `
-                  <tr>
-                    <td class="date-cell"><strong>${dateStr}</strong>${lateEntryHtml}</td>
-                    <td><strong>${log.locationTitle}</strong></td>
-                    <td>${log.initials}</td>
-                    <td>${statusBadge}</td>
-                    <td>${finalDetails}</td>
-                  </tr>
-                `;
+                const finalDetails = detailsLines.length > 0 ? `<div class="details-block">${detailsLines.join('')}</div>` : `<span style="color: #94a3b8; font-style: italic;">Standard tasks completed.</span>`;
+                html += `<tr><td class="date-cell"><strong>${dateStr}</strong><br/><span style="color: #64748b;">${timeStr}</span>${lateEntryHtml}</td><td><strong>${log.locationTitle}</strong></td><td>${log.initials}</td><td>${statusBadge}</td><td>${finalDetails}</td></tr>`;
               });
             }
 
-            html += `
-                  </tbody>
-                </table>
-                <script>
-                  window.onload = () => {
-                    setTimeout(() => {
-                      window.print();
-                    }, 250);
-                  }
-                <\/script>
-              </body>
-              </html>
-            `;
-
-            printWindow.document.write(html);
-            printWindow.document.close();
+            html += `</tbody></table><script>window.onload = () => { setTimeout(() => { window.print(); }, 250); }<\/script></body></html>`;
+            printWindow.document.write(html); printWindow.document.close();
           };
 
           const NavItem = ({ icon, label, isActive, onClick }) => (
-            <button 
-              onClick={onClick}
-              type="button"
-              className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-all ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              <div className={`mb-1 transition-transform ${isActive ? 'scale-110' : ''}`}>
-                {icon}
-              </div>
+            <button onClick={onClick} type="button" className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-all ${isActive ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+              <div className={`mb-1 transition-transform ${isActive ? 'scale-110' : ''}`}>{icon}</div>
               <span className={`text-[10px] tracking-wide ${isActive ? 'font-extrabold' : 'font-semibold'}`}>{label}</span>
             </button>
           );
 
-          if (loading) return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-          );
+          if (loading) return <div className="flex items-center justify-center min-h-screen bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
 
           return (
             <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-28">
-              {/* Top Header */}
               <header className="bg-blue-700 text-white sticky top-0 z-20 p-4 shadow-md">
                 <div className="max-w-md mx-auto flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1022,37 +587,20 @@
                     </div>
                   </div>
                   {(view === 'check' || view === 'mark-closed') && (
-                    <button onClick={() => setView('select-location')} className="p-2 hover:bg-blue-600 rounded-full transition-colors">
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
+                    <button onClick={() => setView('select-location')} className="p-2 hover:bg-blue-600 rounded-full transition-colors"><ArrowLeft className="w-5 h-5" /></button>
                   )}
                 </div>
               </header>
 
               <main className="max-w-md mx-auto p-4 space-y-6">
-                {error && (
-                  <div className="bg-red-50 text-red-600 p-3 rounded-2xl border border-red-100 text-sm flex items-start gap-2 shadow-sm animate-pulse">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="font-medium">{error}</span>
-                  </div>
-                )}
+                {error && <div className="bg-red-50 text-red-600 p-3 rounded-2xl border border-red-100 text-sm flex items-start gap-2 shadow-sm animate-pulse"><AlertCircle className="w-4 h-4 flex-shrink-0" /><span className="font-medium">{error}</span></div>}
 
+                {}
                 {view === 'home' && (
                   <div className="space-y-6 pt-2">
-                    {/* Unit Toggle Switch */}
                     <div className="bg-white p-1.5 rounded-2xl border border-gray-200 flex shadow-sm">
-                      <button 
-                        onClick={() => setSelectedUnit('Lady Sobell')}
-                        className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Lady Sobell' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-                      >
-                        Lady Sobell
-                      </button>
-                      <button 
-                        onClick={() => setSelectedUnit('Endoscopy Suite')}
-                        className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Endoscopy Suite' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
-                      >
-                        Endoscopy Suite
-                      </button>
+                      <button onClick={() => setSelectedUnit('Lady Sobell')} className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Lady Sobell' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>Lady Sobell</button>
+                      <button onClick={() => setSelectedUnit('Endoscopy Suite')} className={`flex-1 py-3 text-sm font-extrabold rounded-xl transition-all ${selectedUnit === 'Endoscopy Suite' ? 'bg-blue-700 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>Endoscopy Suite</button>
                     </div>
 
                     <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
@@ -1064,62 +612,31 @@
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <button 
-                        onClick={() => setView('select-location')}
-                        className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
-                      >
-                        <div className="bg-blue-50 p-4 rounded-2xl text-blue-600">
-                          <ListChecks className="w-8 h-8" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800">New Audit</div>
-                        </div>
+                      <button onClick={() => setView('select-location')} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]">
+                        <div className="bg-blue-50 p-4 rounded-2xl text-blue-600"><ListChecks className="w-8 h-8" /></div>
+                        <div className="font-bold text-gray-800">New Audit</div>
                       </button>
 
-                      <button 
-                        onClick={() => setView('actions')}
-                        className={`p-6 bg-white rounded-3xl shadow-sm border flex flex-col items-center text-center gap-3 transition-all active:scale-[0.98] ${pendingIssues.length > 0 ? 'border-orange-300 hover:shadow-orange-100 hover:border-orange-400' : 'border-gray-100 hover:shadow-md hover:border-blue-300'}`}
-                      >
-                        <div className={`p-4 rounded-2xl relative ${pendingIssues.length > 0 ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-500'}`}>
-                          <ShieldAlert className="w-8 h-8" />
-                          {pendingIssues.length > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full border-2 border-white animate-bounce">
-                              {pendingIssues.length}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800">Action Board</div>
-                        </div>
+                      <button onClick={() => { setView('history'); setHistoryTab('actions'); }} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-orange-300 transition-all active:scale-[0.98] relative">
+                        {actionItems.length > 0 && <span className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-full animate-bounce">{actionItems.length}</span>}
+                        <div className="bg-orange-50 p-4 rounded-2xl text-orange-600"><AlertCircle className="w-8 h-8" /></div>
+                        <div className="font-bold text-gray-800">Action Board</div>
                       </button>
 
-                      <button 
-                        onClick={() => setView('history')}
-                        className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
-                      >
-                        <div className="bg-gray-50 p-4 rounded-2xl text-gray-500">
-                          <History className="w-8 h-8" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800">View Logs</div>
-                        </div>
+                      <button onClick={() => { setView('history'); setHistoryTab('logs'); }} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-gray-300 transition-all active:scale-[0.98]">
+                        <div className="bg-gray-50 p-4 rounded-2xl text-gray-500"><History className="w-8 h-8" /></div>
+                        <div className="font-bold text-gray-800">Recent Logs</div>
                       </button>
-                      
-                      <button 
-                        onClick={() => setView('qr')}
-                        className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]"
-                      >
-                        <div className="bg-gray-50 p-4 rounded-2xl text-gray-500">
-                          <QrCode className="w-8 h-8" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-800">Unit QR Code</div>
-                        </div>
+
+                      <button onClick={() => { setView('history'); setHistoryTab('compliance'); }} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-green-300 transition-all active:scale-[0.98]">
+                        <div className="bg-green-50 p-4 rounded-2xl text-green-600"><BarChart3 className="w-8 h-8" /></div>
+                        <div className="font-bold text-gray-800">Reports</div>
                       </button>
                     </div>
                   </div>
                 )}
 
+                {}
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
                     <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
@@ -1130,42 +647,14 @@
                         const isClosed = isUnitClosedToday || (roomLog?.type === 'room_closure');
                         
                         return (
-                          <button
-                            key={key}
-                            onClick={() => !isCompleted && !isClosed && startChecklist(key)}
-                            disabled={isCompleted || isClosed}
-                            className={`w-full text-left p-5 shadow-sm border rounded-2xl flex items-center justify-between transition-all group ${
-                              isClosed
-                                ? 'bg-gray-100 border-gray-200 opacity-90 cursor-not-allowed'
-                                : isCompleted 
-                                  ? 'bg-green-50 border-green-200 opacity-90 cursor-not-allowed' 
-                                  : 'bg-white border-gray-100 hover:border-blue-400 hover:shadow-md'
-                            }`}
-                          >
+                          <button key={key} onClick={() => !isCompleted && startChecklist(key)} disabled={isCompleted} className={`w-full text-left p-5 shadow-sm border rounded-2xl flex items-center justify-between transition-all group ${isClosed ? 'bg-gray-100 border-gray-200 opacity-90 cursor-not-allowed' : isCompleted ? 'bg-green-50 border-green-200 opacity-90 cursor-not-allowed' : 'bg-white border-gray-100 hover:border-blue-400 hover:shadow-md'}`}>
                             <div className="flex items-center gap-4">
-                               <div className={`p-2.5 rounded-xl transition-colors ${
-                                 isClosed ? 'bg-gray-200 text-gray-600' :
-                                 isCompleted ? 'bg-green-100 text-green-600' : 'bg-gray-50 group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600'
-                               }`}>
+                               <div className={`p-2.5 rounded-xl transition-colors ${isClosed ? 'bg-gray-200 text-gray-600' : isCompleted ? 'bg-green-100 text-green-600' : 'bg-gray-50 group-hover:bg-blue-50 text-gray-400 group-hover:text-blue-600'}`}>
                                   {isClosed ? <Ban className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
                                </div>
-                               <span className={`font-bold text-lg ${
-                                 isClosed ? 'text-gray-600' :
-                                 isCompleted ? 'text-green-800' : 'text-gray-800'
-                               }`}>{data.title}</span>
+                               <span className={`font-bold text-lg ${isClosed ? 'text-gray-600' : isCompleted ? 'text-green-800' : 'text-gray-800'}`}>{data.title}</span>
                             </div>
-                            
-                            {isClosed ? (
-                              <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200">
-                                <Ban className="w-3 h-3" /> Closed
-                              </span>
-                            ) : isCompleted ? (
-                              <span className="text-[10px] uppercase tracking-widest font-black text-green-600 flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-green-100">
-                                <CheckCircle2 className="w-3 h-3" /> Done
-                              </span>
-                            ) : (
-                              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500" />
-                            )}
+                            {isClosed ? <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-200"><Ban className="w-3 h-3" /> Closed</span> : isCompleted ? <span className="text-[10px] uppercase tracking-widest font-black text-green-600 flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-green-100"><CheckCircle2 className="w-3 h-3" /> Done</span> : <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500" />}
                           </button>
                         );
                       })}
@@ -1174,14 +663,9 @@
                     {selectedUnit === 'Lady Sobell' && (
                       <div className="pt-6 border-t border-gray-200 mt-6 space-y-3">
                          <h2 className="font-extrabold text-xl px-1 text-gray-800">Specialist Checklists</h2>
-                         <button 
-                           onClick={() => startChecklist('bleed_trolley')}
-                           className="w-full text-left p-5 shadow-sm border border-gray-100 rounded-2xl flex items-center justify-between transition-all bg-white hover:border-red-400 hover:shadow-md group"
-                         >
+                         <button onClick={() => startChecklist('bleed_trolley')} className="w-full text-left p-5 shadow-sm border border-gray-100 rounded-2xl flex items-center justify-between transition-all bg-white hover:border-red-400 hover:shadow-md group">
                            <div className="flex items-center gap-4">
-                              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl group-hover:bg-red-100 transition-colors">
-                                 <Stethoscope className="w-5 h-5" />
-                              </div>
+                              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl group-hover:bg-red-100 transition-colors"><Stethoscope className="w-5 h-5" /></div>
                               <div className="text-left">
                                 <div className="font-bold text-lg text-red-900 leading-none mb-1">GI Bleed Trolley</div>
                                 <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Mondays / PRN Check</div>
@@ -1193,71 +677,37 @@
                     )}
 
                     <div className="pt-6 border-t border-gray-200 mt-6">
-                      <button
-                        onClick={() => setView('mark-closed')}
-                        className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all"
-                      >
-                        <Ban className="w-5 h-5 text-gray-500" />
-                        Unit Closed / Not Running
-                      </button>
-                      <p className="text-center text-[10px] text-gray-500 mt-2 font-medium">Mark entire unit as closed for a specific date (e.g., Bank Holiday)</p>
+                      <button onClick={() => setView('mark-closed')} className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all"><Ban className="w-5 h-5 text-gray-500" />Unit Closed / Not Running</button>
+                      <p className="text-center text-[10px] text-gray-500 mt-2 font-medium">Mark entire unit as closed for a specific date</p>
                     </div>
                   </div>
                 )}
 
+                {}
                 {view === 'check' && (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className={`${selectedLocKey === 'bleed_trolley' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm`}>
                       <div>
-                        <span className={`text-[10px] uppercase font-bold tracking-widest ${selectedLocKey === 'bleed_trolley' ? 'text-red-700' : 'text-blue-700'}`}>Auditing Location ({selectedUnit})</span>
-                        <div className={`font-bold text-lg ${selectedLocKey === 'bleed_trolley' ? 'text-red-900' : 'text-blue-900'}`}>
-                          {selectedLocKey === 'bleed_trolley' ? 'GI Bleed Emergency Trolley' : CHECKLIST_DATA[selectedLocKey].title}
-                        </div>
+                        <span className={`text-[10px] uppercase font-bold tracking-widest ${selectedLocKey === 'bleed_trolley' ? 'text-red-700' : 'text-blue-700'}`}>Auditing ({selectedUnit})</span>
+                        <div className={`font-bold text-lg ${selectedLocKey === 'bleed_trolley' ? 'text-red-900' : 'text-blue-900'}`}>{selectedLocKey === 'bleed_trolley' ? 'GI Bleed Trolley' : CHECKLIST_DATA[selectedLocKey].title}</div>
                       </div>
                     </div>
                     
                     {selectedLocKey !== 'bleed_trolley' && (
                       <div className="flex bg-gray-100 p-1 rounded-xl w-full">
-                         <button 
-                           type="button"
-                           onClick={() => setIsRoomClosed(false)}
-                           className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRoomClosed ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-                         >
-                           Standard Audit
-                         </button>
-                         <button 
-                           type="button"
-                           onClick={() => setIsRoomClosed(true)}
-                           className={`flex-1 flex items-center justify-center gap-1 py-2 text-sm font-bold rounded-lg transition-all ${isRoomClosed ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                         >
-                           <Ban className="w-4 h-4" /> Room Closed
-                         </button>
+                         <button type="button" onClick={() => setIsRoomClosed(false)} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isRoomClosed ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}>Standard Audit</button>
+                         <button type="button" onClick={() => setIsRoomClosed(true)} className={`flex-1 flex items-center justify-center gap-1 py-2 text-sm font-bold rounded-lg transition-all ${isRoomClosed ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}><Ban className="w-4 h-4" /> Room Closed</button>
                       </div>
                     )}
 
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
                       <label className="block">
                         <span className="text-sm font-bold text-gray-700">Staff Initials</span>
-                        <input 
-                          type="text" 
-                          value={initials}
-                          onChange={(e) => setInitials(e.target.value)}
-                          placeholder="E.g. JD"
-                          required
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all p-4 bg-gray-50 border uppercase font-black text-gray-800"
-                        />
+                        <input type="text" value={initials} onChange={(e) => setInitials(e.target.value)} placeholder="E.g. JD" required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border uppercase font-black text-gray-800" />
                       </label>
-
                       <label className="block">
                         <span className="text-sm font-bold text-gray-700">Audit Date</span>
-                        <input 
-                          type="date" 
-                          value={auditDate}
-                          max={new Date().toISOString().split('T')[0]}
-                          onChange={(e) => setAuditDate(e.target.value)}
-                          required
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all p-4 bg-gray-50 border font-bold text-gray-800"
-                        />
+                        <input type="date" value={auditDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setAuditDate(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border font-bold text-gray-800" />
                       </label>
                     </div>
 
@@ -1266,21 +716,9 @@
                         <div className="space-y-3">
                           <h3 className="text-xs uppercase font-extrabold text-gray-400 tracking-widest px-1">Daily Mandatory</h3>
                           {getDailyTasks(selectedLocKey, selectedUnit).map((item) => (
-                            <label 
-                              key={item} 
-                              className={`flex items-start p-4 rounded-2xl border transition-all cursor-pointer ${
-                                checklist[`daily_${item}`] ? 'bg-green-50 border-green-200 shadow-inner' : 'bg-white border-gray-200 hover:border-gray-300'
-                              }`}
-                            >
-                              <input 
-                                type="checkbox" 
-                                className="hidden"
-                                checked={checklist[`daily_${item}`] || false}
-                                onChange={() => handleToggle(`daily_${item}`)}
-                              />
-                              <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
-                                checklist[`daily_${item}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                              }`}>
+                            <label key={item} className={`flex items-start p-4 rounded-2xl border transition-all cursor-pointer ${checklist[`daily_${item}`] ? 'bg-green-50 border-green-200 shadow-inner' : 'bg-white border-gray-200 hover:border-gray-300'}`}>
+                              <input type="checkbox" className="hidden" checked={checklist[`daily_${item}`]} onChange={() => handleToggle(`daily_${item}`)} />
+                              <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${checklist[`daily_${item}`] ? 'bg-green-500 border-green-500' : 'border-gray-300'}`}>
                                 {checklist[`daily_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
                               </div>
                               <span className={`text-sm leading-snug ${checklist[`daily_${item}`] ? 'font-bold text-green-900' : 'font-semibold text-gray-700'}`}>{item}</span>
@@ -1292,33 +730,14 @@
                           <div className="space-y-3">
                             <div className="flex items-center justify-between px-1">
                               <h3 className="text-xs uppercase font-extrabold text-blue-400 tracking-widest">Weekly Tasks</h3>
-                              {new Date(auditDate).getDay() !== 1 && (
-                                <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
-                                  Mondays Only
-                                </span>
-                              )}
+                              {new Date(auditDate).getDay() !== 1 && <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md uppercase tracking-wide">Mondays Only</span>}
                             </div>
                             {getWeeklyTasks(selectedLocKey, selectedUnit).map((item) => {
                               const isMonday = new Date(auditDate).getDay() === 1;
                               return (
-                                <label 
-                                  key={item} 
-                                  className={`flex items-start p-4 rounded-2xl border border-dashed transition-all ${
-                                    isMonday ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'
-                                  } ${
-                                    checklist[`weekly_${item}`] ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-                                  }`}
-                                >
-                                  <input 
-                                    type="checkbox" 
-                                    className="hidden"
-                                    checked={checklist[`weekly_${item}`] || false}
-                                    onChange={() => isMonday && handleToggle(`weekly_${item}`)}
-                                    disabled={!isMonday}
-                                  />
-                                  <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${
-                                    checklist[`weekly_${item}`] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
-                                  }`}>
+                                <label key={item} className={`flex items-start p-4 rounded-2xl border border-dashed transition-all ${isMonday ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${checklist[`weekly_${item}`] ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                                  <input type="checkbox" className="hidden" checked={checklist[`weekly_${item}`]} onChange={() => isMonday && handleToggle(`weekly_${item}`)} disabled={!isMonday} />
+                                  <div className={`w-6 h-6 rounded-lg border-2 mt-0.5 mr-4 flex flex-shrink-0 items-center justify-center transition-all ${checklist[`weekly_${item}`] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                                     {checklist[`weekly_${item}`] && <CheckCircle2 className="w-4 h-4 text-white" />}
                                   </div>
                                   <span className={`text-sm leading-snug ${checklist[`weekly_${item}`] ? 'font-bold text-blue-900' : 'font-medium text-gray-600'}`}>{item}</span>
@@ -1334,47 +753,29 @@
                       <div className="space-y-6 animate-in fade-in duration-300">
                         {BLEED_TROLLEY_DATA.map(compartment => (
                           <div key={compartment.compartment} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-                            <h3 className="text-xs font-extrabold text-red-800 uppercase tracking-widest bg-red-50 p-3 rounded-xl border border-red-100">
-                              {compartment.compartment}
-                            </h3>
+                            <h3 className="text-xs font-extrabold text-red-800 uppercase tracking-widest bg-red-50 p-3 rounded-xl border border-red-100">{compartment.compartment}</h3>
                             <div className="space-y-2">
                               {compartment.items.map(item => {
                                 const state = checklist[item.name] || { checked: false, expiry: '' };
                                 const expiring = item.hasExpiry && checkExpiryWarning(state.expiry, auditDate);
-                                
                                 return (
                                   <div key={item.name} className={`p-4 rounded-2xl border transition-all ${state.checked ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                                     <div className="flex items-start justify-between gap-4">
                                        <label className="flex items-start gap-3 cursor-pointer flex-1">
-                                          <input 
-                                            type="checkbox" 
-                                            className="hidden" 
-                                            checked={state.checked || false} 
-                                            onChange={(e) => handleTrolleyCheck(item.name, e.target.checked)} 
-                                          />
+                                          <input type="checkbox" className="hidden" checked={state.checked} onChange={(e) => handleTrolleyCheck(item.name, e.target.checked)} />
                                           <div className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-all ${state.checked ? 'bg-green-500 border-green-500' : 'border-gray-300 bg-white'}`}>
                                              {state.checked && <CheckCircle2 className="w-4 h-4 text-white" />}
                                           </div>
                                           <div>
                                             <div className={`text-sm leading-snug ${state.checked ? 'font-bold text-green-900' : 'font-semibold text-gray-700'}`}>
-                                              <span className="text-gray-500 font-extrabold mr-1 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-xs">{item.qty}x</span> 
-                                              {item.name}
+                                              <span className="text-gray-500 font-extrabold mr-1 bg-white px-1.5 py-0.5 rounded border border-gray-200 text-xs">{item.qty}x</span> {item.name}
                                             </div>
                                           </div>
                                        </label>
                                        {item.hasExpiry && (
                                          <div className="w-28 flex flex-col items-end flex-shrink-0">
-                                           <input 
-                                             type="month" 
-                                             value={state.expiry || ''} 
-                                             onChange={(e) => handleTrolleyExpiry(item.name, e.target.value)} 
-                                             className={`w-full text-xs p-2 rounded-xl border font-bold text-center transition-all ${expiring ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200' : 'border-gray-200 bg-white focus:ring-blue-200 text-gray-700'}`}
-                                           />
-                                           {expiring && (
-                                              <span className="text-[9px] font-black text-red-600 mt-1 flex items-center gap-0.5 uppercase tracking-wider">
-                                                <AlertCircle className="w-3 h-3"/> Expiring Soon
-                                              </span>
-                                           )}
+                                           <input type="month" value={state.expiry} onChange={(e) => handleTrolleyExpiry(item.name, e.target.value)} className={`w-full text-xs p-2 rounded-xl border font-bold text-center transition-all ${expiring ? 'border-red-300 bg-red-50 text-red-700 focus:ring-red-200' : 'border-gray-200 bg-white focus:ring-blue-200 text-gray-700'}`} />
+                                           {expiring && <span className="text-[9px] font-black text-red-600 mt-1 flex items-center gap-0.5 uppercase tracking-wider"><AlertCircle className="w-3 h-3"/> Expiring Soon</span>}
                                          </div>
                                        )}
                                     </div>
@@ -1390,166 +791,127 @@
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-4">
                       <label className="block">
                         <span className="text-sm font-bold text-gray-700">{isRoomClosed ? "Reason for Room Closure" : "Comments / Restock Notes (Optional)"}</span>
-                        <textarea 
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder={isRoomClosed ? "E.g. Maintenance, Short-staffed, etc." : "Report missing stock, maintenance issues, etc."}
-                          required={isRoomClosed}
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all p-4 bg-gray-50 border text-gray-800 text-sm resize-none h-24"
-                        />
+                        <textarea value={comment} onChange={(e) => setComment(e.target.value)} placeholder={isRoomClosed ? "E.g. Maintenance, Short-staffed, etc." : "Report missing stock, maintenance issues, etc."} required={isRoomClosed} className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border text-gray-800 text-sm resize-none h-24" />
                       </label>
                     </div>
 
-                    <button 
-                      type="submit"
-                      disabled={submitting}
-                      className={`w-full text-white font-extrabold p-5 rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 ${
-                        isRoomClosed ? 'bg-gray-800 hover:bg-gray-900' : 'bg-gray-900 hover:bg-black'
-                      }`}
-                    >
+                    <button type="submit" disabled={submitting} className={`w-full text-white font-extrabold p-5 rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 ${isRoomClosed ? 'bg-gray-800 hover:bg-gray-900' : 'bg-gray-900 hover:bg-black'}`}>
                       {submitting ? <Loader2 className="w-6 h-6 animate-spin" /> : (isRoomClosed ? 'Confirm Room Closed' : 'Sign & Submit Audit')}
                     </button>
                   </form>
                 )}
 
+                {}
                 {view === 'mark-closed' && (
                   <form onSubmit={handleClosureSubmit} className="space-y-6">
                     <div className="bg-gray-100 p-5 rounded-3xl border border-gray-200 flex items-center justify-between shadow-sm">
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Status Update ({selectedUnit})</span>
-                        <div className="font-bold text-gray-800 text-lg">Mark Entire Unit as Closed</div>
-                      </div>
+                      <div><span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Status Update</span><div className="font-bold text-gray-800 text-lg">Mark Entire Unit as Closed</div></div>
                       <Ban className="w-8 h-8 text-gray-400" />
                     </div>
-
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-5">
-                      <label className="block">
-                        <span className="text-sm font-bold text-gray-700">Staff Initials</span>
-                        <input 
-                          type="text" 
-                          value={initials}
-                          onChange={(e) => setInitials(e.target.value)}
-                          placeholder="E.g. JD"
-                          required
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-gray-500 focus:ring focus:ring-gray-200 transition-all p-4 bg-gray-50 border uppercase font-black text-gray-800"
-                        />
-                      </label>
-
-                      <label className="block">
-                        <span className="text-sm font-bold text-gray-700">Date Unit Closed</span>
-                        <input 
-                          type="date" 
-                          value={closureDate}
-                          onChange={(e) => setClosureDate(e.target.value)}
-                          required
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-gray-500 focus:ring focus:ring-gray-200 transition-all p-4 bg-gray-50 border font-bold text-gray-800"
-                        />
-                      </label>
-
-                      <label className="block">
-                        <span className="text-sm font-bold text-gray-700">Reason / Comment</span>
-                        <textarea 
-                          value={closureReason}
-                          onChange={(e) => setClosureReason(e.target.value)}
-                          placeholder="E.g. Bank Holiday, Weekend, etc."
-                          required
-                          className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm focus:border-gray-500 focus:ring focus:ring-gray-200 transition-all p-4 bg-gray-50 border text-gray-800 text-sm resize-none h-24"
-                        />
-                      </label>
+                      <label className="block"><span className="text-sm font-bold text-gray-700">Staff Initials</span><input type="text" value={initials} onChange={(e) => setInitials(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border uppercase font-black text-gray-800" /></label>
+                      <label className="block"><span className="text-sm font-bold text-gray-700">Date Unit Closed</span><input type="date" value={closureDate} onChange={(e) => setClosureDate(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border font-bold text-gray-800" /></label>
+                      <label className="block"><span className="text-sm font-bold text-gray-700">Reason / Comment</span><textarea value={closureReason} onChange={(e) => setClosureReason(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border text-gray-800 text-sm resize-none h-24" /></label>
                     </div>
-
-                    <button 
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full bg-gray-800 text-white font-extrabold p-5 rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:bg-gray-900 active:scale-[0.98] transition-all disabled:opacity-50"
-                    >
+                    <button type="submit" disabled={submitting} className="w-full bg-gray-800 text-white font-extrabold p-5 rounded-2xl shadow-xl flex items-center justify-center gap-2 hover:bg-gray-900 active:scale-[0.98] disabled:opacity-50">
                       {submitting ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Confirm Unit Closed'}
                     </button>
                   </form>
                 )}
 
+                {}
                 {view === 'history' && (
                   <div className="space-y-4 pt-2">
                     
-                    <div className="flex bg-gray-200 p-1 rounded-xl w-full">
-                       <button 
-                         onClick={() => setHistoryTab('logs')}
-                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'logs' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-                       >
-                         Recent Logs
-                       </button>
-                       <button 
-                         onClick={() => setHistoryTab('compliance')}
-                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'compliance' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-                       >
-                         Weekly
-                       </button>
-                       <button 
-                         onClick={() => setHistoryTab('monthly')}
-                         className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${historyTab === 'monthly' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-                       >
-                         Monthly
-                       </button>
+                    <div className="flex bg-gray-200 p-1 rounded-xl w-full text-xs font-bold overflow-x-auto snap-x">
+                      <button onClick={() => setHistoryTab('logs')} className={`flex-1 min-w-[80px] py-2 px-2 whitespace-nowrap rounded-lg transition-all ${historyTab === 'logs' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500'}`}>Recent Logs</button>
+                      <button onClick={() => setHistoryTab('actions')} className={`flex-1 min-w-[80px] py-2 px-2 whitespace-nowrap rounded-lg transition-all flex items-center justify-center gap-1 ${historyTab === 'actions' ? 'bg-white shadow-sm text-orange-600' : 'text-gray-500'}`}>Actions {actionItems.length > 0 && <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full text-[9px] leading-none">{actionItems.length}</span>}</button>
+                      <button onClick={() => setHistoryTab('compliance')} className={`flex-1 min-w-[80px] py-2 px-2 whitespace-nowrap rounded-lg transition-all ${historyTab === 'compliance' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500'}`}>Weekly</button>
+                      <button onClick={() => setHistoryTab('monthly')} className={`flex-1 min-w-[80px] py-2 px-2 whitespace-nowrap rounded-lg transition-all ${historyTab === 'monthly' ? 'bg-white shadow-sm text-blue-700' : 'text-gray-500'}`}>Monthly</button>
                     </div>
 
-                    {historyTab === 'compliance' && (
-                      <div className="mt-4 flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-200">
-                        <div className="flex items-center gap-2">
-                           <CalendarDays className="w-5 h-5 text-blue-600" />
-                           <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wide">Report End Date</span>
-                        </div>
-                        <input 
-                          type="date" 
-                          value={reportEndDate}
-                          max={new Date().toISOString().split('T')[0]}
-                          onChange={(e) => setReportEndDate(e.target.value)}
-                          className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                        />
+                    {historyTab === 'actions' && (
+                      <div className="space-y-4">
+                        <h2 className="font-extrabold text-xl text-gray-800 px-2 pt-2">Pending Issues</h2>
+                        {actionItems.length === 0 ? (
+                           <div className="text-center py-10 bg-white rounded-3xl border border-dashed border-gray-200">
+                             <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-400" />
+                             <p className="font-bold text-gray-500">Unit is fully compliant. No pending issues!</p>
+                           </div>
+                        ) : actionItems.map(log => {
+                           const isTrolley = log.type === 'trolley_audit';
+                           return (
+                             <div key={log.id} className="bg-white p-5 rounded-3xl border-2 border-orange-200 shadow-sm relative">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <AlertCircle className="w-5 h-5 text-orange-500" />
+                                  <span className="font-extrabold text-gray-800">{log.locationTitle}</span>
+                                  <span className="text-[10px] text-gray-500 ml-auto">{getLogDate(log).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-xs font-bold text-orange-700 mb-4 bg-orange-50 p-3 rounded-xl border border-orange-100">
+                                  Missed: {isTrolley ? Object.keys(log.checklist).filter(k => !log.checklist[k].checked).join(', ') : Object.keys(log.checklist).filter(k => !log.checklist[k]).map(k => k.replace('daily_','').replace('weekly_','')).join(', ')}
+                                </p>
+                                {resolveId === log.id ? (
+                                  <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                                     <input type="text" placeholder="Your Initials (e.g. JD)" value={resolveInitials} onChange={e => setResolveInitials(e.target.value)} className="w-full text-xs p-3 rounded-xl border font-bold uppercase" />
+                                     <textarea placeholder="Resolution Note (e.g. Restocked)" value={resolveNote} onChange={e => setResolveNote(e.target.value)} className="w-full text-xs p-3 rounded-xl border font-medium h-16 resize-none" />
+                                     <div className="flex gap-2">
+                                        <button onClick={() => setResolveId(null)} className="flex-1 bg-white border border-gray-200 text-gray-600 text-xs font-bold py-2 rounded-xl">Cancel</button>
+                                        <button onClick={() => handleResolve(log.id)} className="flex-1 bg-green-600 text-white text-xs font-bold py-2 rounded-xl">Mark Resolved</button>
+                                     </div>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setResolveId(log.id)} className="w-full bg-gray-900 text-white text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2"><CheckSquare className="w-4 h-4"/> Resolve Issue</button>
+                                )}
+                             </div>
+                           )
+                        })}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between px-2 pt-4">
-                      <h2 className="font-extrabold text-xl text-gray-800">
-                        {historyTab === 'logs' ? 'Daily Audits' : historyTab === 'compliance' ? 'Weekly Overview' : 'Monthly Summary'}
-                      </h2>
-                      {historyTab === 'compliance' && currentLogs.length > 0 && (
-                        <button 
-                          onClick={exportToPDF}
-                          className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100 transition-colors shadow-sm"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Save Weekly PDF
-                        </button>
-                      )}
-                    </div>
+                    {historyTab === 'monthly' && (
+                       <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-6 rounded-3xl text-white shadow-lg mt-4">
+                          <h2 className="font-extrabold text-2xl mb-1">Monthly MTD Overview</h2>
+                          <p className="text-blue-200 text-xs font-bold mb-6">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                          <div className="space-y-4">
+                             {Object.entries(CHECKLIST_DATA).concat([['bleed_trolley', {title: 'GI Bleed Emergency Trolley'}]]).map(([key, data]) => {
+                                const mLogs = currentLogs.filter(l => l.locationKey === key && l.timestamp && new Date(l.timestamp.seconds ? l.timestamp.seconds * 1000 : l.timestamp).getMonth() === new Date().getMonth());
+                                return (
+                                   <div key={key} className="bg-white/10 p-4 rounded-2xl flex justify-between items-center">
+                                      <span className="font-bold text-sm">{data.title}</span>
+                                      <span className="font-black bg-white text-blue-800 px-3 py-1 rounded-lg text-xs">{mLogs.length} Audits</span>
+                                   </div>
+                                )
+                             })}
+                          </div>
+                       </div>
+                    )}
+
+                    {historyTab === 'compliance' && (
+                      <div className="mt-4 flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-200">
+                        <div className="flex items-center gap-2"><CalendarDays className="w-5 h-5 text-blue-600" /><span className="text-xs font-extrabold text-gray-700 uppercase tracking-wide">Report End Date</span></div>
+                        <input type="date" value={reportEndDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setReportEndDate(e.target.value)} className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-500" />
+                      </div>
+                    )}
+
+                    {/* ALWAYS Render PDF Save Button under Logs and Compliance tabs */}
+                    {(historyTab === 'logs' || historyTab === 'compliance') && (
+                      <div className="flex items-center justify-between px-2 pt-4">
+                        <h2 className="font-extrabold text-xl text-gray-800">{historyTab === 'logs' ? 'Daily Audits' : 'Weekly Overview'}</h2>
+                        {currentLogs.length > 0 && <button onClick={exportToPDF} className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-xl border border-blue-200 hover:bg-blue-100"><FileText className="w-4 h-4" /> Save Weekly PDF</button>}
+                      </div>
+                    )}
 
                     {historyTab === 'compliance' && (
                       <div className="space-y-4 pb-4">
-                        
                         <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
-                          <div className="flex items-center gap-2 mb-4">
-                            <BarChart3 className="w-5 h-5 text-blue-600" />
-                            <h3 className="font-extrabold text-gray-800">Unit Completion Rate</h3>
-                          </div>
-                          
+                          <div className="flex items-center gap-2 mb-4"><BarChart3 className="w-5 h-5 text-blue-600" /><h3 className="font-extrabold text-gray-800">Unit Completion Rate</h3></div>
                           <div className="flex items-end justify-between h-32 gap-2 mt-2">
                             {weeklyChartData.map((data, i) => (
                               <div key={i} className="flex flex-col items-center flex-1 gap-2">
                                 <div className="w-full relative flex items-end justify-center h-24 bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
-                                  {data.isUnitClosed ? (
-                                    <div className="absolute inset-0 bg-gray-100 flex items-center justify-center flex-col">
-                                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest -rotate-90">Closed</span>
-                                    </div>
-                                  ) : (
-                                    <div 
-                                      className={`w-full rounded-t-lg transition-all duration-500 ${data.percentage === 100 ? 'bg-green-500' : data.percentage >= 50 ? 'bg-orange-400' : 'bg-red-500'}`}
-                                      style={{ height: `${data.percentage}%` }}
-                                    ></div>
-                                  )}
+                                  {data.isUnitClosed ? <div className="absolute inset-0 bg-gray-100 flex items-center justify-center flex-col"><span className="text-[9px] font-black text-gray-400 uppercase tracking-widest -rotate-90">Closed</span></div> : <div className={`w-full rounded-t-lg transition-all duration-500 ${data.percentage === 100 ? 'bg-green-500' : data.percentage >= 50 ? 'bg-orange-400' : 'bg-red-500'}`} style={{ height: `${data.percentage}%` }}></div>}
                                 </div>
-                                <span className={`text-[10px] font-bold ${i === 6 ? 'text-blue-700' : 'text-gray-500'}`}>
-                                  {i === 6 ? 'TDY' : getDayName(data.date).substring(0, 2)}
-                                </span>
+                                <span className={`text-[10px] font-bold ${i === 6 ? 'text-blue-700' : 'text-gray-500'}`}>{i === 6 ? 'TDY' : data.date.toLocaleDateString(undefined, {weekday: 'short'}).substring(0, 2)}</span>
                                 {!data.isUnitClosed && <span className="text-[9px] font-black text-gray-700">{data.percentage}%</span>}
                               </div>
                             ))}
@@ -1559,44 +921,18 @@
                         <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Area Breakdown</h3>
                         {Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => {
                           const chronologicalDays = [...last7Days].reverse();
-                          let doneCount = 0;
-                          let closedCount = 0;
-
+                          let doneCount = 0; let closedCount = 0;
                           const dayStatuses = chronologicalDays.map((d) => {
-                            const closureLog = currentLogs.find(log => {
-                              const logDate = getLogDate(log);
-                              return (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(logDate, d);
-                            });
-
-                            if (closureLog) {
-                              closedCount++;
-                              return { date: d, status: 'closed' };
-                            }
-
-                            const standardLog = currentLogs.find(log => {
-                              const logDate = getLogDate(log);
-                              return log.type !== 'unit_closure' && 
-                                     log.type !== 'room_closure' && 
-                                     log.type !== 'trolley_audit' && 
-                                     isSameDay(logDate, d) && 
-                                     log.locationKey === locKey;
-                            });
-
+                            const closureLog = currentLogs.find(log => (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === locKey)) && isSameDay(getLogDate(log), d));
+                            if (closureLog) { closedCount++; return { date: d, status: 'closed' }; }
+                            const standardLog = currentLogs.find(log => log.type !== 'unit_closure' && log.type !== 'room_closure' && log.type !== 'trolley_audit' && isSameDay(getLogDate(log), d) && log.locationKey === locKey);
                             if (standardLog) {
                               const dailyKeys = Object.keys(standardLog.checklist || {}).filter(k => k.startsWith('daily_'));
-                              const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => standardLog.checklist[k]);
-                              
-                              if (isAllDone) {
-                                doneCount++;
-                                return { date: d, status: 'done' };
-                              } else {
-                                return { date: d, status: 'incomplete' };
-                              }
+                              if (dailyKeys.length === 0 || dailyKeys.every(k => standardLog.checklist[k])) { doneCount++; return { date: d, status: 'done' }; } 
+                              else return { date: d, status: 'incomplete' };
                             }
-
                             return { date: d, status: 'missing' };
                           });
-
                           const requiredDays = 7 - closedCount;
                           const complianceRate = requiredDays === 0 ? 100 : Math.round((doneCount / requiredDays) * 100);
 
@@ -1605,39 +941,22 @@
                               <div className="flex justify-between items-end mb-4">
                                 <div>
                                   <h3 className="font-extrabold text-gray-800 text-lg leading-none">{locData.title.replace('Area', '').replace('Room', 'Rm')}</h3>
-                                  <div className={`text-xs font-bold tracking-wide mt-1.5 ${requiredDays === 0 ? 'text-gray-500' : complianceRate >= 80 ? 'text-green-600' : complianceRate >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
-                                    {requiredDays === 0 ? 'Closed all week' : `${complianceRate}% Compliant`}
-                                  </div>
+                                  <div className={`text-xs font-bold tracking-wide mt-1.5 ${requiredDays === 0 ? 'text-gray-500' : complianceRate >= 80 ? 'text-green-600' : complianceRate >= 50 ? 'text-orange-500' : 'text-red-500'}`}>{requiredDays === 0 ? 'Closed all week' : `${complianceRate}% Compliant`}</div>
                                 </div>
-                                <div className="text-xs font-black text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
-                                  {doneCount}/{requiredDays} Done
-                                </div>
+                                <div className="text-xs font-black text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">{doneCount}/{requiredDays} Done</div>
                               </div>
-                              
                               <div className="flex justify-between gap-1.5">
-                                {dayStatuses.map((ds, i) => {
-                                  const isToday = i === 6;
-                                  return (
-                                    <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
-                                      <div 
-                                        className={`w-full h-10 rounded-xl flex items-center justify-center transition-all ${
-                                          ds.status === 'done' ? 'bg-green-500 text-white shadow-[0_2px_10px_-3px_rgba(34,197,94,0.5)]' :
-                                          ds.status === 'incomplete' ? 'bg-orange-400 text-white shadow-[0_2px_10px_-3px_rgba(251,146,60,0.5)]' :
-                                          ds.status === 'closed' ? 'bg-gray-100 text-gray-400' :
-                                          'bg-red-50 text-red-500 border border-red-100'
-                                        }`}
-                                      >
-                                        {ds.status === 'done' && <CheckCircle2 className="w-5 h-5" />}
-                                        {ds.status === 'incomplete' && <AlertCircle className="w-5 h-5" />}
-                                        {ds.status === 'closed' && <Ban className="w-4 h-4 opacity-40" />}
-                                        {ds.status === 'missing' && <XCircle className="w-5 h-5" />}
-                                      </div>
-                                      <span className={`text-[10px] font-bold ${isToday ? 'text-blue-700' : 'text-gray-400'}`}>
-                                        {isToday ? 'TDY' : getDayName(ds.date).substring(0, 2)}
-                                      </span>
+                                {dayStatuses.map((ds, i) => (
+                                  <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
+                                    <div className={`w-full h-10 rounded-xl flex items-center justify-center transition-all ${ds.status === 'done' ? 'bg-green-500 text-white shadow-[0_2px_10px_-3px_rgba(34,197,94,0.5)]' : ds.status === 'incomplete' ? 'bg-orange-400 text-white shadow-[0_2px_10px_-3px_rgba(251,146,60,0.5)]' : ds.status === 'closed' ? 'bg-gray-100 text-gray-400' : 'bg-red-50 text-red-500 border border-red-100'}`}>
+                                      {ds.status === 'done' && <CheckCircle2 className="w-5 h-5" />}
+                                      {ds.status === 'incomplete' && <AlertCircle className="w-5 h-5" />}
+                                      {ds.status === 'closed' && <Ban className="w-4 h-4 opacity-40" />}
+                                      {ds.status === 'missing' && <XCircle className="w-5 h-5" />}
                                     </div>
-                                  );
-                                })}
+                                    <span className={`text-[10px] font-bold ${i === 6 ? 'text-blue-700' : 'text-gray-400'}`}>{i === 6 ? 'TDY' : ds.date.toLocaleDateString(undefined, {weekday: 'short'}).substring(0, 2)}</span>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           );
@@ -1645,646 +964,149 @@
                       </div>
                     )}
                     
-                    {historyTab === 'monthly' && (
-                      <div className="space-y-4 pb-4">
-                        <div className="mt-4 flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm animate-in fade-in duration-200">
-                          <div className="flex items-center gap-2">
-                             <CalendarDays className="w-5 h-5 text-blue-600" />
-                             <span className="text-xs font-extrabold text-gray-700 uppercase tracking-wide">Audit Month</span>
-                          </div>
-                          <input 
-                            type="month" 
-                            value={reportMonth}
-                            max={new Date().toISOString().substring(0, 7)}
-                            onChange={(e) => setReportMonth(e.target.value)}
-                            className="text-sm font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                          />
-                        </div>
-
-                        {(() => {
-                           try {
-                             const safeReportMonth = reportMonth || new Date().toISOString().substring(0, 7);
-                             const parts = safeReportMonth.split('-');
-                             const year = parseInt(parts[0], 10) || new Date().getFullYear();
-                             const month = parseInt(parts[1], 10) || (new Date().getMonth() + 1);
-                             const daysInMonth = new Date(year, month, 0).getDate();
-                             const monthName = getMonthName(month);
-
-                             const thisMonthLogs = currentLogs.filter(log => {
-                               const d = getLogDate(log);
-                               return d.getFullYear() === year && d.getMonth() === month - 1;
-                             });
-
-                             const toDateString = (date) => {
-                               if (!date || isNaN(date.getTime())) return "";
-                               return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                             };
-                             const unitClosureDays = new Set(thisMonthLogs.filter(l => l.type === 'unit_closure').map(l => toDateString(getLogDate(l))));
-
-                             const locationsToTrack = Object.entries(CHECKLIST_DATA).map(([locKey, locData]) => ({ key: locKey, title: locData.title, type: 'standard' }));
-                             if (selectedUnit === 'Lady Sobell') {
-                               locationsToTrack.push({ key: 'bleed_trolley', title: 'GI Bleed Emergency Trolley', type: 'trolley' });
-                             }
-
-                             const monthlyStats = locationsToTrack.map((loc) => {
-                               if (loc.type === 'trolley') {
-                                 let mondays = 0;
-                                 for (let i = 1; i <= daysInMonth; i++) {
-                                   if (new Date(year, month - 1, i).getDay() === 1) mondays++;
-                                 }
-                                 const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key);
-                                 const doneCount = areaLogs.length; 
-                                 const compliance = mondays === 0 ? 100 : Math.min(100, Math.round((doneCount / mondays) * 100));
-                                 return { key: loc.key, title: loc.title, requiredDays: mondays, doneCount, closedCount: 0, compliance, daysInMonth };
-                               }
-
-                               const areaLogs = thisMonthLogs.filter(l => l.locationKey === loc.key || l.type === 'unit_closure');
-                               
-                               const closedDaysSet = new Set(unitClosureDays);
-                               areaLogs.filter(l => l.type === 'room_closure' && l.locationKey === loc.key).forEach(l => closedDaysSet.add(toDateString(getLogDate(l))));
-                               
-                               const completedDaysSet = new Set();
-                               areaLogs.filter(l => l.type !== 'unit_closure' && l.type !== 'room_closure' && l.type !== 'trolley_audit' && l.locationKey === loc.key).forEach(l => {
-                                  const dailyKeys = Object.keys(l.checklist || {}).filter(k => k.startsWith('daily_'));
-                                  const isAllDone = dailyKeys.length === 0 || dailyKeys.every(k => l.checklist[k]);
-                                  if (isAllDone) {
-                                     completedDaysSet.add(toDateString(getLogDate(l)));
-                                  }
-                               });
-
-                               let closedCount = 0;
-                               let doneCount = 0;
-                               for (let i = 1; i <= daysInMonth; i++) {
-                                  const dStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                                  if (closedDaysSet.has(dStr)) closedCount++;
-                                  else if (completedDaysSet.has(dStr)) doneCount++;
-                               }
-
-                               const requiredDays = daysInMonth - closedCount;
-                               const compliance = requiredDays === 0 ? 100 : Math.round((doneCount / requiredDays) * 100);
-
-                               return { key: loc.key, title: loc.title, requiredDays, doneCount, closedCount, compliance, daysInMonth };
-                             });
-
-                             const totalRequired = monthlyStats.reduce((sum, stat) => sum + stat.requiredDays, 0);
-                             const totalDone = monthlyStats.reduce((sum, stat) => sum + stat.doneCount, 0);
-                             const overallCompliance = totalRequired === 0 ? 100 : Math.round((totalDone / totalRequired) * 100);
-
-                             return (
-                               <div className="space-y-4 animate-in fade-in duration-300">
-                                  <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl shadow-lg text-white">
-                                     <div className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-1">{monthName} {year}</div>
-                                     <div className="flex items-end justify-between">
-                                        <div>
-                                          <div className="text-4xl font-extrabold">{overallCompliance}%</div>
-                                          <div className="text-sm font-medium opacity-90">Overall Unit Compliance</div>
-                                        </div>
-                                        <div className="text-right">
-                                          <div className="text-xl font-bold">{totalDone} / {totalRequired}</div>
-                                          <div className="text-xs opacity-75 uppercase tracking-wide">Total Audits</div>
-                                        </div>
-                                     </div>
-                                  </div>
-
-                                  <h3 className="font-extrabold text-gray-800 text-lg px-2 mt-2">Monthly Area Breakdown</h3>
-                                  
-                                  {monthlyStats.map(stat => (
-                                    <div key={stat.key} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-                                       <div>
-                                          <h4 className="font-bold text-gray-800 text-base">{stat.title}</h4>
-                                          <div className="text-xs text-gray-500 mt-1 font-medium">
-                                            {stat.doneCount} done • {stat.closedCount} closed • {stat.daysInMonth} days
-                                          </div>
-                                       </div>
-                                       <div className="flex flex-col items-end gap-1">
-                                          <div className={`text-lg font-black ${stat.requiredDays === 0 ? 'text-gray-400' : stat.compliance >= 80 ? 'text-green-600' : stat.compliance >= 50 ? 'text-orange-500' : 'text-red-500'}`}>
-                                             {stat.requiredDays === 0 ? 'N/A' : `${stat.compliance}%`}
-                                          </div>
-                                          {stat.requiredDays > 0 && stat.compliance < 100 && (
-                                             <div className="text-[10px] uppercase font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">
-                                               {stat.requiredDays - stat.doneCount} Missed
-                                             </div>
-                                          )}
-                                       </div>
-                                    </div>
-                                  ))}
-                               </div>
-                             );
-                           } catch(e) {
-                             return <div className="p-4 text-center text-gray-500 text-sm">Please select a valid month to view stats.</div>;
-                           }
-                        })()}
+                    {}
+                    {historyTab === 'logs' && currentLogs.length === 0 ? (
+                      <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200">
+                        <ListChecks className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                        <p className="font-semibold">No audits recorded for {selectedUnit} yet.</p>
                       </div>
-                    )}
-                    
-                    {historyTab === 'logs' && (
-                      currentLogs.length === 0 ? (
-                        <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200">
-                          <ListChecks className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                          <p className="font-semibold">No audits recorded for {selectedUnit} yet.</p>
-                        </div>
-                      ) : (
-                        currentLogs.map((log) => {
-                          const dateObj = getLogDate(log);
-                          const pad = n => n.toString().padStart(2, '0');
-                          const dateLogicStr = `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
+                    ) : historyTab === 'logs' && (
+                      currentLogs.map((log) => {
+                        const dateLogicStr = getLogDate(log).toISOString().split('T')[0];
 
-                          if (log.type === 'unit_closure' || log.type === 'room_closure') {
-                            const isUnit = log.type === 'unit_closure';
-                            return (
-                              <div key={log.id} className="bg-gray-50 p-5 rounded-3xl border border-gray-200 shadow-sm space-y-4 relative group">
-                                {/* DELETE ACTION WITH PIN */}
-                                <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-                                   {deleteConfirmId === log.id ? (
-                                     <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
-                                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-                                         <Lock className="w-3 h-3" /> Admin Security
-                                       </div>
-                                       <input 
-                                         type="password"
-                                         value={pinInput}
-                                         onChange={(e) => setPinInput(e.target.value)}
-                                         placeholder="Enter PIN"
-                                         className="w-24 p-2 text-xs border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-200 transition-all text-center"
-                                       />
-                                       <div className="flex gap-1.5 w-full">
-                                          <button 
-                                            onClick={() => {setDeleteConfirmId(null); setPinInput('');}}
-                                            className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50"
-                                          >
-                                            Cancel
-                                          </button>
-                                          <button 
-                                            onClick={() => handleDelete(log.id)}
-                                            className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm"
-                                          >
-                                            Delete
-                                          </button>
-                                       </div>
+                        if (log.type === 'unit_closure' || log.type === 'room_closure') {
+                          const isUnit = log.type === 'unit_closure';
+                          return (
+                            <div key={log.id} className="bg-gray-50 p-5 rounded-3xl border border-gray-200 shadow-sm space-y-4 relative group">
+                              <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                                 {deleteConfirmId === log.id ? (
+                                   <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
+                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1"><Lock className="w-3 h-3" /> Admin Security</div>
+                                     <input type="password" value={pinInput} onChange={(e) => setPinInput(e.target.value)} placeholder="Enter PIN" className="w-24 p-2 text-xs border border-gray-200 rounded-lg text-center" />
+                                     <div className="flex gap-1.5 w-full">
+                                        <button onClick={() => {setDeleteConfirmId(null); setPinInput('');}} className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50">Cancel</button>
+                                        <button onClick={() => handleDelete(log.id)} className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm">Delete</button>
                                      </div>
-                                   ) : (
-                                     <button 
-                                       onClick={() => setDeleteConfirmId(log.id)}
-                                       className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                                       title="Delete Entry"
-                                     >
-                                       <Trash2 className="w-4 h-4" />
-                                     </button>
-                                   )}
-                                </div>
-
-                                <div className="flex justify-between items-start pr-10">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <div className="bg-gray-200 p-2 rounded-xl">
-                                        <Ban className="w-4 h-4 text-gray-600" />
-                                      </div>
-                                      <span className="font-extrabold text-gray-800">{isUnit ? 'Unit Closed' : log.locationTitle}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                                      <User className="w-3.5 h-3.5" />
-                                      <span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1.5">
-                                    <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border border-gray-200">
-                                      <Clock className="w-3 h-3" />
-                                      {formatDate(log.timestamp)}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="pt-3 border-t border-gray-200 flex flex-wrap gap-2">
-                                  <span className="text-[10px] px-2.5 py-1 bg-gray-200 text-gray-700 rounded-lg border border-gray-300 font-extrabold uppercase tracking-wide">
-                                    {isUnit ? 'Unit Not Running' : 'Room Closed'}
-                                  </span>
-                                </div>
-
-                                {log.comment && (
-                                  <div className="mt-3 p-3 bg-white rounded-2xl border border-gray-200 text-sm text-gray-600 italic">
-                                    <span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Reason:</span>
-                                    "{log.comment}"
-                                  </div>
-                                )}
+                                   </div>
+                                 ) : <button onClick={() => setDeleteConfirmId(log.id)} className="text-gray-400 hover:text-red-500 transition-colors p-1" title="Delete Entry"><Trash2 className="w-4 h-4" /></button>}
                               </div>
-                            );
-                          }
 
-                          if (log.type === 'trolley_audit') {
-                            const allItems = Object.keys(log.checklist || {});
-                            const missingItems = allItems.filter(k => log.checklist[k] && !log.checklist[k].checked);
-                            const expiringItems = allItems.filter(k => log.checklist[k] && log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
-                            const isPerfect = missingItems.length === 0;
-
-                            return (
-                              <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
-                                <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-                                   {deleteConfirmId === log.id ? (
-                                     <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
-                                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-                                         <Lock className="w-3 h-3" /> Admin Security
-                                       </div>
-                                       <input 
-                                         type="password"
-                                         value={pinInput}
-                                         onChange={(e) => setPinInput(e.target.value)}
-                                         placeholder="Enter PIN"
-                                         className="w-24 p-2 text-xs border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-200 transition-all text-center"
-                                       />
-                                       <div className="flex gap-1.5 w-full">
-                                          <button 
-                                            onClick={() => {setDeleteConfirmId(null); setPinInput('');}}
-                                            className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50"
-                                          >
-                                            Cancel
-                                          </button>
-                                          <button 
-                                            onClick={() => handleDelete(log.id)}
-                                            className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm"
-                                          >
-                                            Delete
-                                          </button>
-                                       </div>
-                                     </div>
-                                   ) : (
-                                     <button 
-                                       onClick={() => setDeleteConfirmId(log.id)}
-                                       className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                                       title="Delete Entry"
-                                     >
-                                       <Trash2 className="w-4 h-4" />
-                                     </button>
-                                   )}
+                              <div className="flex justify-between items-start pr-10">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2"><div className="bg-gray-200 p-2 rounded-xl"><Ban className="w-4 h-4 text-gray-600" /></div><span className="font-extrabold text-gray-800">{isUnit ? 'Unit Closed' : log.locationTitle}</span></div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 pl-1"><User className="w-3.5 h-3.5" /><span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span></div>
                                 </div>
-
-                                <div className="flex justify-between items-start pr-10">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <div className="bg-red-50 p-2 rounded-xl">
-                                        <Stethoscope className="w-4 h-4 text-red-600" />
-                                      </div>
-                                      <span className="font-extrabold text-gray-800">{log.locationTitle}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                                      <User className="w-3.5 h-3.5" />
-                                      <span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1.5">
-                                    <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                      <Clock className="w-3 h-3" />
-                                      {formatDate(log.timestamp)}
-                                    </div>
-                                  </div>
+                                <div className="flex flex-col items-end gap-1.5">
+                                  <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-white px-3 py-1.5 rounded-full border border-gray-200"><Clock className="w-3 h-3" />{formatDate(log.timestamp)}</div>
                                 </div>
-                                
-                                <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
-                                  <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${
-                                      isPerfect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                                    }`}>
-                                      {isPerfect ? 'Trolley Stocked' : `Missing Items (${missingItems.length})`}
-                                    </span>
-                                    {expiringItems.length > 0 && (
-                                      <span className="text-[10px] px-2.5 py-1 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 font-extrabold uppercase tracking-wide flex items-center gap-1">
-                                        <AlertCircle className="w-3 h-3" /> Expiring Soon ({expiringItems.length})
-                                      </span>
-                                    )}
-                                </div>
-
-                                {!isPerfect && (
-                                  <div className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded-2xl border border-red-100">
-                                    <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missing Items:</span>
-                                    {missingItems.join(', ')}
-                                  </div>
-                                )}
-
-                                {expiringItems.length > 0 && (
-                                  <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200">
-                                    <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Items Exiring Soon:</span>
-                                    {expiringItems.join(', ')}
-                                  </div>
-                                )}
-
-                                {log.comment && (
-                                  <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic">
-                                    <span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>
-                                    "{log.comment}"
-                                  </div>
-                                )}
-
-                                {log.resolved && (
-                                  <div className="mt-3 p-3 bg-green-50 rounded-2xl border border-green-200 text-sm text-green-800">
-                                    <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase font-black tracking-widest text-green-600">
-                                      <CheckCircle2 className="w-3.5 h-3.5" /> Issue Resolved
-                                    </div>
-                                    <p className="font-medium">"{log.resolutionNote}"</p>
-                                    <p className="text-[10px] mt-1 opacity-70">By {log.resolvedBy} on {formatDate(log.resolvedAt)}</p>
-                                  </div>
-                                )}
-                                {getLogIssues(log) !== null && !log.resolved && (
-                                  <div className="mt-3 p-2 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-800 font-bold flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4"/> Pending Resolution
-                                  </div>
-                                )}
                               </div>
-                            );
-                          }
+                              <div className="pt-3 border-t border-gray-200 flex flex-wrap gap-2">
+                                <span className="text-[10px] px-2.5 py-1 bg-gray-200 text-gray-700 rounded-lg border border-gray-300 font-extrabold uppercase tracking-wide">{isUnit ? 'Unit Not Running' : 'Room Closed'}</span>
+                              </div>
+                              {log.comment && <div className="mt-3 p-3 bg-white rounded-2xl border border-gray-200 text-sm text-gray-600 italic"><span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Reason:</span>"{log.comment}"</div>}
+                            </div>
+                          );
+                        }
 
-                          // Standard Audit rendering
-                          const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-                          const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
-                          const dailyTotal = dailyKeys.length;
-                          const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
-                          const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
+                        if (log.type === 'trolley_audit') {
+                          const allItems = Object.keys(log.checklist || {});
+                          const missingItems = allItems.filter(k => !log.checklist[k].checked);
+                          const expiringItems = allItems.filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, dateLogicStr));
+                          const isPerfect = missingItems.length === 0;
 
                           return (
-                          <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
-                            {/* DELETE ACTION WITH PIN */}
-                            <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
-                               {deleteConfirmId === log.id ? (
-                                 <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
-                                   <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">
-                                     <Lock className="w-3 h-3" /> Admin Security
+                            <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
+                              <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                                 {deleteConfirmId === log.id ? (
+                                   <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
+                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1"><Lock className="w-3 h-3" /> Admin Security</div>
+                                     <input type="password" value={pinInput} onChange={(e) => setPinInput(e.target.value)} placeholder="Enter PIN" className="w-24 p-2 text-xs border border-gray-200 rounded-lg text-center" />
+                                     <div className="flex gap-1.5 w-full">
+                                        <button onClick={() => {setDeleteConfirmId(null); setPinInput('');}} className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50">Cancel</button>
+                                        <button onClick={() => handleDelete(log.id)} className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm">Delete</button>
+                                     </div>
                                    </div>
-                                   <input 
-                                     type="password"
-                                     value={pinInput}
-                                     onChange={(e) => setPinInput(e.target.value)}
-                                     placeholder="Enter PIN"
-                                     className="w-24 p-2 text-xs border border-gray-200 rounded-lg focus:border-red-500 focus:ring-1 focus:ring-red-200 transition-all text-center"
-                                     autoFocus
-                                   />
-                                   <div className="flex gap-1.5 w-full">
-                                      <button 
-                                        onClick={() => {setDeleteConfirmId(null); setPinInput('');}}
-                                        className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50"
-                                      >
-                                        Cancel
-                                      </button>
-                                      <button 
-                                        onClick={() => handleDelete(log.id)}
-                                        className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm"
-                                      >
-                                        Delete
-                                      </button>
-                                   </div>
-                                 </div>
-                               ) : (
-                                 <button 
-                                   onClick={() => setDeleteConfirmId(log.id)}
-                                   className="text-gray-300 hover:text-red-500 transition-colors p-1"
-                                   title="Delete Entry"
-                                 >
-                                   <Trash2 className="w-4 h-4" />
-                                 </button>
-                               )}
+                                 ) : <button onClick={() => setDeleteConfirmId(log.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1" title="Delete Entry"><Trash2 className="w-4 h-4" /></button>}
+                              </div>
+
+                              <div className="flex justify-between items-start pr-10">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2"><div className="bg-red-50 p-2 rounded-xl"><Stethoscope className="w-4 h-4 text-red-600" /></div><span className="font-extrabold text-gray-800">{log.locationTitle}</span></div>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 pl-1"><User className="w-3.5 h-3.5" /><span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span></div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1.5">
+                                  <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100"><Clock className="w-3 h-3" />{formatDate(log.timestamp)}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
+                                <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${isPerfect ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>{isPerfect ? 'Trolley Stocked' : `Missing Items (${missingItems.length})`}</span>
+                                {expiringItems.length > 0 && <span className="text-[10px] px-2.5 py-1 bg-orange-50 text-orange-700 rounded-lg border border-orange-200 font-extrabold uppercase tracking-wide flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Expiring Soon ({expiringItems.length})</span>}
+                              </div>
+                              {!isPerfect && <div className="mt-2 text-xs text-red-600 bg-red-50 p-3 rounded-2xl border border-red-100"><span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missing Items:</span>{missingItems.join(', ')}</div>}
+                              {expiringItems.length > 0 && <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200"><span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Items Exiring Soon:</span>{expiringItems.join(', ')}</div>}
+                              {log.comment && <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic"><span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>"{log.comment}"</div>}
+                              {log.isResolved && <div className="mt-2 text-xs text-green-800 bg-green-50 p-2 rounded-lg border border-green-100 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /><span><strong>Resolved:</strong> {log.resolveNote} (by {log.resolvedBy})</span></div>}
                             </div>
-
-                            <div className="flex justify-between items-start pr-10">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="bg-blue-50 p-2 rounded-xl">
-                                    <MapPin className="w-4 h-4 text-blue-600" />
-                                  </div>
-                                  <span className="font-extrabold text-gray-800">{log.locationTitle}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 pl-1">
-                                  <User className="w-3.5 h-3.5" />
-                                  <span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-end gap-1.5">
-                                <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                                  <Clock className="w-3 h-3" />
-                                  {formatDate(log.timestamp)}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
-                              <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${
-                                isAllDailyDone ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'
-                              }`}>
-                                {isAllDailyDone ? 'Daily Done' : `Incomplete: ${dailyDone}/${dailyTotal}`}
-                              </span>
-                              {Object.entries(log.checklist || {}).filter(([k,v]) => k.startsWith('weekly_') && v).length > 0 && (
-                                <span className="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 font-extrabold uppercase tracking-wide">
-                                  + Weekly Tasks
-                                </span>
-                              )}
-                            </div>
-
-                            {!isAllDailyDone && (
-                              <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200">
-                                <span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missed Tasks:</span>
-                                {missingDaily.join(', ')}
-                              </div>
-                            )}
-
-                            {log.comment && (
-                              <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic">
-                                <span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>
-                                "{log.comment}"
-                              </div>
-                            )}
-
-                            {log.resolved && (
-                              <div className="mt-3 p-3 bg-green-50 rounded-2xl border border-green-200 text-sm text-green-800">
-                                <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase font-black tracking-widest text-green-600">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Issue Resolved
-                                </div>
-                                <p className="font-medium">"{log.resolutionNote}"</p>
-                                <p className="text-[10px] mt-1 opacity-70">By {log.resolvedBy} on {formatDate(log.resolvedAt)}</p>
-                              </div>
-                            )}
-                            {getLogIssues(log) !== null && !log.resolved && (
-                              <div className="mt-3 p-2 bg-orange-50 rounded-xl border border-orange-200 text-xs text-orange-800 font-bold flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4"/> Pending Resolution
-                              </div>
-                            )}
-                          </div>
                           );
-                        })
-                      )
-                    )}
-                  </div>
-                )}
+                        }
 
-                {view === 'actions' && (
-                  <div className="space-y-4 pt-2 animate-in fade-in duration-300">
-                    <div className="bg-gradient-to-br from-orange-500 to-red-600 p-6 rounded-3xl shadow-lg text-white mb-6">
-                       <h2 className="text-2xl font-extrabold mb-1 tracking-tight">Action Board</h2>
-                       <p className="opacity-90 text-sm font-medium">Resolve pending unit issues</p>
-                    </div>
+                        const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
+                        const dailyDone = dailyKeys.filter(k => log.checklist[k]).length;
+                        const dailyTotal = dailyKeys.length;
+                        const isAllDailyDone = dailyTotal === 0 || dailyDone === dailyTotal;
+                        const missingDaily = dailyKeys.filter(k => !log.checklist[k]).map(k => k.replace('daily_', ''));
 
-                    {pendingIssues.length === 0 ? (
-                      <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200 shadow-sm">
-                        <CheckSquare className="w-16 h-16 mx-auto mb-4 text-green-400" />
-                        <h3 className="font-extrabold text-lg text-gray-800 mb-1">All Clear!</h3>
-                        <p className="font-medium text-sm">There are no pending actions or missing items in {selectedUnit}.</p>
-                      </div>
-                    ) : (
-                      pendingIssues.map(log => {
-                         const issues = getLogIssues(log);
-                         return (
-                            <div key={log.id} className="bg-white p-5 rounded-3xl border border-orange-200 shadow-sm space-y-4">
-                               <div className="flex justify-between items-start">
-                                 <div>
-                                    <div className="text-[10px] uppercase tracking-widest font-black text-orange-600 bg-orange-50 px-2 py-1 rounded inline-block mb-2">Pending Issue</div>
-                                    <h3 className="font-bold text-gray-900 text-lg leading-tight">{log.locationTitle}</h3>
-                                    <p className="text-xs text-gray-500 font-medium mt-1">Reported by <strong>{log.initials}</strong> on {formatDate(log.timestamp)}</p>
+                        return (
+                        <div key={log.id} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4 relative group">
+                          <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
+                             {deleteConfirmId === log.id ? (
+                               <div className="flex flex-col gap-2 items-end bg-white p-3 rounded-2xl shadow-xl border border-gray-200 z-10 animate-in fade-in zoom-in duration-200">
+                                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1"><Lock className="w-3 h-3" /> Admin Security</div>
+                                 <input type="password" value={pinInput} onChange={(e) => setPinInput(e.target.value)} placeholder="Enter PIN" className="w-24 p-2 text-xs border border-gray-200 rounded-lg text-center" />
+                                 <div className="flex gap-1.5 w-full">
+                                    <button onClick={() => {setDeleteConfirmId(null); setPinInput('');}} className="flex-1 text-[9px] font-bold text-gray-400 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-50">Cancel</button>
+                                    <button onClick={() => handleDelete(log.id)} className="flex-1 bg-red-600 text-white text-[9px] font-bold py-1.5 rounded-lg hover:bg-red-700 shadow-sm">Delete</button>
                                  </div>
                                </div>
+                             ) : <button onClick={() => setDeleteConfirmId(log.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1" title="Delete Entry"><Trash2 className="w-4 h-4" /></button>}
+                          </div>
 
-                               <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 space-y-2">
-                                  {issues.missingDaily?.length > 0 && (
-                                     <div>
-                                        <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Missed Daily Tasks:</span>
-                                        <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.missingDaily.map(i => <li key={i}>{i}</li>)}</ul>
-                                     </div>
-                                  )}
-                                  {issues.missing?.length > 0 && (
-                                     <div>
-                                        <span className="text-[10px] font-bold text-red-800 uppercase tracking-widest block mb-1">Missing Trolley Items:</span>
-                                        <ul className="text-sm text-red-700 list-disc list-inside font-medium">{issues.missing.map(i => <li key={i}>{i}</li>)}</ul>
-                                     </div>
-                                  )}
-                                  {issues.expiring?.length > 0 && (
-                                     <div>
-                                        <span className="text-[10px] font-bold text-orange-800 uppercase tracking-widest block mb-1">Expiring Soon:</span>
-                                        <ul className="text-sm text-orange-700 list-disc list-inside font-medium">{issues.expiring.map(i => <li key={i}>{i}</li>)}</ul>
-                                     </div>
-                                  )}
-                                  {log.comment && (
-                                     <div className="mt-2 pt-2 border-t border-orange-200">
-                                       <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest block mb-1">Staff Note:</span>
-                                       <p className="text-sm text-gray-700 italic">"{log.comment}"</p>
-                                     </div>
-                                  )}
-                               </div>
-
-                               {resolveModalLog?.id === log.id ? (
-                                  <form onSubmit={handleResolveIssue} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3 animate-in zoom-in-95 duration-200">
-                                     <h4 className="font-bold text-gray-800 text-sm">Resolve Action</h4>
-                                     <div className="flex gap-2">
-                                        <input 
-                                          type="text" 
-                                          placeholder="Initials" 
-                                          value={resolveInitials} 
-                                          onChange={e => setResolveInitials(e.target.value)} 
-                                          className="w-1/3 p-3 text-sm border border-gray-300 rounded-xl focus:ring focus:ring-blue-200 uppercase font-bold" 
-                                          required 
-                                        />
-                                        <input 
-                                          type="text" 
-                                          placeholder="Resolution Note (e.g. Restocked)" 
-                                          value={resolveNote} 
-                                          onChange={e => setResolveNote(e.target.value)} 
-                                          className="w-2/3 p-3 text-sm border border-gray-300 rounded-xl focus:ring focus:ring-blue-200" 
-                                          required 
-                                        />
-                                     </div>
-                                     <div className="flex gap-2">
-                                        <button type="button" onClick={() => setResolveModalLog(null)} className="flex-1 p-3 text-sm font-bold text-gray-500 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-all">Cancel</button>
-                                        <button type="submit" disabled={submitting} className="flex-1 p-3 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2">
-                                          {submitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <><CheckCircle2 className="w-4 h-4"/> Mark Resolved</>}
-                                        </button>
-                                     </div>
-                                  </form>
-                               ) : (
-                                  <button onClick={() => setResolveModalLog(log)} className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2">
-                                     Resolve Issue
-                                  </button>
-                               )}
+                          <div className="flex justify-between items-start pr-10">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2"><div className="bg-blue-50 p-2 rounded-xl"><MapPin className="w-4 h-4 text-blue-600" /></div><span className="font-extrabold text-gray-800">{log.locationTitle}</span></div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500 pl-1"><User className="w-3.5 h-3.5" /><span>Staff: <strong className="text-gray-700 uppercase">{log.initials}</strong></span></div>
                             </div>
-                         );
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="text-[10px] font-bold text-gray-500 flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100"><Clock className="w-3 h-3" />{formatDate(log.timestamp)}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="pt-3 border-t border-gray-50 flex flex-wrap gap-2">
+                            <span className={`text-[10px] px-2.5 py-1 rounded-lg border font-extrabold uppercase tracking-wide ${isAllDailyDone ? 'bg-green-50 text-green-700 border-green-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{isAllDailyDone ? 'Daily Done' : `Incomplete: ${dailyDone}/${dailyTotal}`}</span>
+                            {Object.entries(log.checklist || {}).filter(([k,v]) => k.startsWith('weekly_') && v).length > 0 && <span className="text-[10px] px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 font-extrabold uppercase tracking-wide">+ Weekly Tasks</span>}
+                          </div>
+                          {!isAllDailyDone && <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-3 rounded-2xl border border-orange-200"><span className="font-bold uppercase tracking-wider text-[9px] block mb-1">Missed Tasks:</span>{missingDaily.join(', ')}</div>}
+                          {log.comment && <div className="mt-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 text-sm text-gray-600 italic"><span className="font-bold text-gray-500 not-italic block text-[10px] uppercase tracking-wider mb-1">Notes:</span>"{log.comment}"</div>}
+                          {log.isResolved && <div className="mt-2 text-xs text-green-800 bg-green-50 p-2 rounded-lg border border-green-100 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /><span><strong>Resolved:</strong> {log.resolveNote} (by {log.resolvedBy})</span></div>}
+                        </div>
+                        );
                       })
                     )}
                   </div>
                 )}
-
-                {view === 'qr' && (
-                  <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-center space-y-6">
-                    <h2 className="font-extrabold text-2xl text-gray-800">Post Access QR</h2>
-                    <p className="text-gray-500 text-sm leading-relaxed font-medium">Print this code and place it at key unit stations for instant app access.</p>
-                    
-                    <div className="text-left space-y-2 bg-gray-50 p-5 rounded-2xl border border-gray-200">
-                      <label className="text-xs font-extrabold text-gray-500 uppercase tracking-widest">Public App Link</label>
-                      <input 
-                        type="text" 
-                        value={appUrl}
-                        onChange={(e) => setAppUrl(e.target.value)}
-                        className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all font-mono"
-                        placeholder="https://..."
-                      />
-                      <p className="text-[10px] text-gray-400 font-semibold">
-                        * Paste your GitHub Pages URL here to generate the correct code.
-                      </p>
-                    </div>
-
-                    <div className="mx-auto w-64 h-64 bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-5">
-                       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                         <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(appUrl)}`} 
-                            alt="App QR Code"
-                            className="w-48 h-48"
-                         />
-                       </div>
-                    </div>
-
-                    <button 
-                      onClick={() => window.print()}
-                      className="w-full py-4 bg-blue-600 text-white rounded-2xl text-sm font-extrabold shadow-lg shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all"
-                    >
-                      Print QR Page
-                    </button>
-                  </div>
-                )}
               </main>
 
-              {/* Copyright Footnote */}
+              {}
               <footer className="max-w-md mx-auto px-4 pb-8 pt-4 text-center">
-                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                  &copy; {new Date().getFullYear()} Developed by Darryl James Tolentino, Junior Charge Nurse, Endoscopy Unit WPH through Gemini.
-                </p>
+                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">&copy; {new Date().getFullYear()} Developed by Darryl James Tolentino, Junior Charge Nurse, Endoscopy Unit WPH through Gemini.</p>
               </footer>
 
-              {/* Fixed Bottom Navigation */}
               <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
                 <div className="max-w-md mx-auto flex justify-between px-2 py-1">
-                  <NavItem 
-                    icon={<LayoutDashboard className="w-6 h-6" />} 
-                    label="Home" 
-                    isActive={view === 'home'} 
-                    onClick={() => setView('home')} 
-                  />
-                  <NavItem 
-                    icon={<ListChecks className="w-6 h-6" />} 
-                    label="Audit" 
-                    isActive={view === 'select-location' || view === 'check'} 
-                    onClick={() => setView('select-location')} 
-                  />
-                  <button 
-                    onClick={() => setView('actions')}
-                    type="button"
-                    className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 transition-all ${view === 'actions' ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600'}`}
-                  >
-                    <div className={`mb-1 transition-transform ${view === 'actions' ? 'scale-110' : ''}`}>
-                      <ClipboardList className="w-6 h-6" />
-                      {pendingIssues.length > 0 && (
-                        <span className="absolute -top-1 right-3 bg-red-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-white">
-                          {pendingIssues.length}
-                        </span>
-                      )}
-                    </div>
-                    <span className={`text-[10px] tracking-wide ${view === 'actions' ? 'font-extrabold' : 'font-semibold'}`}>Actions</span>
-                  </button>
-                  <NavItem 
-                    icon={<CalendarDays className="w-6 h-6" />} 
-                    label="Logs" 
-                    isActive={view === 'history'} 
-                    onClick={() => setView('history')} 
-                  />
+                  <NavItem icon={<LayoutDashboard className="w-6 h-6" />} label="Home" isActive={view === 'home'} onClick={() => setView('home')} />
+                  <NavItem icon={<ListChecks className="w-6 h-6" />} label="Audit" isActive={view === 'select-location' || view === 'check'} onClick={() => setView('select-location')} />
+                  <NavItem icon={<div className="relative"><CalendarDays className="w-6 h-6" />{actionItems.length > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>}</div>} label="Logs" isActive={view === 'history'} onClick={() => setView('history')} />
                 </div>
               </nav>
             </div>
@@ -2292,7 +1114,7 @@
         };
 
         const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 </html>
