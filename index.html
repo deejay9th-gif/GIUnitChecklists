@@ -165,7 +165,7 @@
         };
 
         const BLEED_TROLLEY_DATA = [
-          { compartment: "Top Compartment", items: [{ name: "Sterile water", qty: 3, hasExpiry: false }, { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" }, { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" }, { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" }, { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" }, { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Overtube (30 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" }, { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }] },
+          { compartment: "Top Compartment", items: [{ name: "Sterile water", qty: 3, hasExpiry: false }, { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" }, { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" }, { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" }, { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" }, { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Overtube (50 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" }, { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }] },
           { compartment: "First Drawer", items: [{ name: "Spray Nozzle", qty: 6, hasExpiry: false }, { name: "CLO test plate", qty: 3, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "CLO reagent", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "C/S specimen pot", qty: 1, hasExpiry: false }, { name: "Sodium Chloride 10 ml", qty: 5, hasExpiry: true, defaultExpiry: "2029-07" }, { name: "Xylocaine 10%", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Infacol", qty: 1, hasExpiry: true, defaultExpiry: "2029-02" }, { name: "Sterile gauze swab", qty: 1, hasExpiry: true, defaultExpiry: "2029-09" }, { name: "Sterile scissor", qty: 2, hasExpiry: true, defaultExpiry: "2026-04" }, { name: "Optilube gel", qty: 15, hasExpiry: true, defaultExpiry: "2030-03" }, { name: "Small mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "Large mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-10" }, { name: "Needle 18g (red)", qty: 4, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Needle 21g (green)", qty: 4, hasExpiry: true, defaultExpiry: "2028-02" }] },
           { compartment: "Second Drawer", items: [{ name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" }, { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" }, { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" }, { name: "Inco pad", qty: 4, hasExpiry: false }, { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" }, { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }] },
           { compartment: "Third Drawer", items: [{ name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Suction liner (blue)", qty: 2, hasExpiry: false }, { name: "Yankauer sucker", qty: 2, hasExpiry: false }, { name: "Suction connecting tube", qty: 3, hasExpiry: false }, { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }] },
@@ -389,7 +389,7 @@
             setSelectedLocKey(key); setComment(''); setIsRoomClosed(false); setAuditDate(new Date().toISOString().split('T')[0]); 
             if (key === 'bleed_trolley') {
               const initialTrolley = {};
-              BLEED_TROLLEY_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
+              BLEED_TROLley_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
               setChecklist(initialTrolley);
             } else {
               const initialChecklist = {};
@@ -895,7 +895,8 @@
                           <h2 className="font-extrabold text-2xl mb-1">Monthly MTD Overview</h2>
                           <p className="text-blue-200 text-xs font-bold mb-6">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
                           <div className="space-y-4">
-                             {Object.entries(CHECKLIST_DATA).concat([['bleed_trolley', {title: 'GI Bleed Emergency Trolley'}]]).map(([key, data]) => {
+                             {/* Ensure Bleed Trolley is ONLY shown in Monthly view if Lady Sobell is selected */}
+                             {(selectedUnit === 'Lady Sobell' ? Object.entries(CHECKLIST_DATA).concat([['bleed_trolley', {title: 'GI Bleed Emergency Trolley'}]]) : Object.entries(CHECKLIST_DATA)).map(([key, data]) => {
                                 const today = new Date();
                                 const currentMonth = today.getMonth();
                                 const currentYear = today.getFullYear();
@@ -944,7 +945,7 @@
                                           <div className="h-1.5 flex-1 bg-white/20 rounded-full overflow-hidden">
                                               <div className={`h-full rounded-full transition-all duration-1000 ${complianceRate === 100 ? 'bg-green-400' : complianceRate >= 80 ? 'bg-green-300' : complianceRate >= 50 ? 'bg-orange-400' : 'bg-red-400'}`} style={{ width: `${complianceRate}%` }}></div>
                                           </div>
-                                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">{completedDays}/{requiredDays} MTD</span>
+                                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-wider">{completedDays} OF {requiredDays} DAYS DONE</span>
                                       </div>
                                    </div>
                                 )
