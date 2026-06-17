@@ -44,7 +44,7 @@
           getFirestore, collection, addDoc, onSnapshot, query, doc, deleteDoc, updateDoc
         } from 'firebase/firestore';
         import { 
-          LayoutDashboard, ListChecks, Activity, ClipboardCheck, History, QrCode, 
+          LayoutDashboard, ListChecks, Activity, ClipboardCheck, History, 
           CheckCircle2, Loader2, ArrowLeft, User, Clock, MapPin, ChevronRight, 
           AlertCircle, FileText, CalendarDays, XCircle, Trash2, Lock, Ban, BarChart3, Stethoscope, CheckSquare
         } from 'lucide-react';
@@ -218,7 +218,6 @@
           const [initials, setInitials] = useState('');
           const [checklist, setChecklist] = useState({});
           const [comment, setComment] = useState('');
-          const [appUrl, setAppUrl] = useState(window.location.href);
           const [selectedUnit, setSelectedUnit] = useState('Lady Sobell');
           const [closureDate, setClosureDate] = useState(new Date().toISOString().split('T')[0]);
           const [closureReason, setClosureReason] = useState('');
@@ -331,23 +330,46 @@
 
           const getDailyTasks = (locKey, unit) => {
             let tasks = [...(CHECKLIST_DATA[locKey]?.daily || [])];
+            
+            // Remove emergency trolley from Room 1 and 2 globally
             if (locKey === 'room1' || locKey === 'room2') {
               tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
-              if (unit === 'Lady Sobell') tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
             }
-            if (locKey === 'room1' && unit !== 'Lady Sobell') tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
-            if (locKey === 'recovery' && unit !== 'Lady Sobell') tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
-            if (locKey === 'recovery' && unit === 'Lady Sobell') {
-              if (!tasks.includes('Clean and Check fridge temperature')) tasks.push('Clean and Check fridge temperature');
+            
+            // Lady Sobell logic vs Endoscopy Suite
+            if (unit === 'Lady Sobell') {
+              if (locKey === 'room1' || locKey === 'room2') {
+                tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+              }
+              if (locKey === 'recovery') {
+                if (!tasks.includes('Clean and Check fridge temperature')) {
+                  tasks.push('Clean and Check fridge temperature');
+                }
+              }
+            } else { // Endoscopy Suite logic
+              if (locKey === 'room1') {
+                tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
+              }
+              if (locKey === 'recovery') {
+                tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
+              }
             }
             return tasks;
           };
 
           const getWeeklyTasks = (locKey, unit) => {
             let tasks = [...(CHECKLIST_DATA[locKey]?.weekly || [])];
+            
+            // Remove emergency trolley from Room 1 and 2 globally
             if (locKey === 'room1' || locKey === 'room2') {
               tasks = tasks.filter(task => !task.toLowerCase().includes('emergency trolley'));
-              if (unit === 'Lady Sobell') tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+            }
+            
+            // Lady Sobell logic
+            if (unit === 'Lady Sobell') {
+              if (locKey === 'room1' || locKey === 'room2') {
+                tasks = tasks.filter(task => !task.toLowerCase().includes('fridge'));
+              }
             }
             return tasks;
           };
@@ -595,7 +617,7 @@
               <main className="max-w-md mx-auto p-4 space-y-6">
                 {error && <div className="bg-red-50 text-red-600 p-3 rounded-2xl border border-red-100 text-sm flex items-start gap-2 shadow-sm animate-pulse"><AlertCircle className="w-4 h-4 flex-shrink-0" /><span className="font-medium">{error}</span></div>}
 
-                {}
+                {/* --- Home View --- */}
                 {view === 'home' && (
                   <div className="space-y-6 pt-2">
                     <div className="bg-white p-1.5 rounded-2xl border border-gray-200 flex shadow-sm">
@@ -636,7 +658,7 @@
                   </div>
                 )}
 
-                {}
+                {/* --- Select Location --- */}
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
                     <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
@@ -683,7 +705,7 @@
                   </div>
                 )}
 
-                {}
+                {/* --- Checklist Form --- */}
                 {view === 'check' && (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className={`${selectedLocKey === 'bleed_trolley' ? 'bg-red-50 border-red-100' : 'bg-blue-50 border-blue-100'} p-5 rounded-3xl border flex items-center justify-between shadow-sm`}>
@@ -801,7 +823,7 @@
                   </form>
                 )}
 
-                {}
+                {/* --- Mark Unit Closed Form --- */}
                 {view === 'mark-closed' && (
                   <form onSubmit={handleClosureSubmit} className="space-y-6">
                     <div className="bg-gray-100 p-5 rounded-3xl border border-gray-200 flex items-center justify-between shadow-sm">
@@ -819,7 +841,7 @@
                   </form>
                 )}
 
-                {}
+                {/* --- History / Logs View --- */}
                 {view === 'history' && (
                   <div className="space-y-4 pt-2">
                     
@@ -1009,7 +1031,6 @@
                       </div>
                     )}
                     
-                    {}
                     {historyTab === 'logs' && currentLogs.length === 0 ? (
                       <div className="text-center py-16 text-gray-500 bg-white rounded-3xl border border-dashed border-gray-200">
                         <ListChecks className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -1142,11 +1163,12 @@
                 )}
               </main>
 
-              {}
+              {/* --- Footer --- */}
               <footer className="max-w-md mx-auto px-4 pb-8 pt-4 text-center">
                 <p className="text-[10px] text-gray-400 font-medium leading-relaxed">&copy; {new Date().getFullYear()} Developed by Darryl James Tolentino, Junior Charge Nurse, Endoscopy Unit WPH through Gemini.</p>
               </footer>
 
+              {/* --- Bottom Navigation --- */}
               <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
                 <div className="max-w-md mx-auto flex justify-between px-2 py-1">
                   <NavItem icon={<LayoutDashboard className="w-6 h-6" />} label="Home" isActive={view === 'home'} onClick={() => setView('home')} />
