@@ -170,7 +170,7 @@
           { compartment: "Second Drawer", items: [{ name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" }, { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" }, { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" }, { name: "Inco pad", qty: 4, hasExpiry: false }, { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" }, { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }] },
           { compartment: "Third Drawer", items: [{ name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Suction liner (blue)", qty: 2, hasExpiry: false }, { name: "Yankauer sucker", qty: 2, hasExpiry: false }, { name: "Suction connecting tube", qty: 3, hasExpiry: false }, { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }] },
           { compartment: "Fourth Drawer", items: [{ name: "XL clip (20mm)", qty: 3, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Large clip (16mm)", qty: 5, hasExpiry: true, defaultExpiry: "2028-07" }, { name: "Small clip (11mm)", qty: 4, hasExpiry: true, defaultExpiry: "2028-08" }, { name: "Biopsy forceps", qty: 2, hasExpiry: true, defaultExpiry: "2028-06" }, { name: "Biopsy forceps (Paediatric)", qty: 1, hasExpiry: true, defaultExpiry: "2027-09" }, { name: "Injector (25g)", qty: 3, hasExpiry: true, defaultExpiry: "2027-12" }, { name: "Injector (23g)", qty: 2, hasExpiry: true, defaultExpiry: "2026-11" }] },
-          { compartment: "Fifth Drawer", items: [{ name: "Snare (10 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-05" }, { name: "Snare (15 mm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-08" }, { name: "Snare (25mm)", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Snare (33mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-01" }, { name: "Grasping forceps (8.5mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Purastat nozzle", qty: 3, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Roth net", qty: 2, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Talon grasping device", qty: 2, hasExpiry: true, defaultExpiry: "2027-12" }, { name: "Distal cap attachment (11.35)", qty: 2, hasExpiry: true, defaultExpiry: "2026-12" }, { name: "Hood", qty: 2, hasExpiry: true, defaultExpiry: "2025-10" }, { name: "Variceal Bander", qty: 2, hasExpiry: true, defaultExpiry: "2026-08" }, { name: "IPAD", qty: 1, hasExpiry: false }] }
+          { compartment: "Fifth Drawer", items: [{ name: "Snare (10 mm)", qty: 2, hasExpiry: true, defaultExpiry: "2026-05" }, { name: "Snare (15 mm)", qty: 2, hasExpiry: true, defaultExpiry: "2027-08" }, { name: "Snare (25mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Snare (33mm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-01" }, { name: "Grasping forceps (8.5mm)", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Purastat nozzle", qty: 3, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Roth net", qty: 2, hasExpiry: true, defaultExpiry: "2028-04" }, { name: "Talon grasping device", qty: 2, hasExpiry: true, defaultExpiry: "2027-12" }, { name: "Distal cap attachment (11.35)", qty: 2, hasExpiry: true, defaultExpiry: "2026-12" }, { name: "Hood", qty: 2, hasExpiry: true, defaultExpiry: "2025-10" }, { name: "Variceal Bander", qty: 2, hasExpiry: true, defaultExpiry: "2026-08" }, { name: "IPAD", qty: 1, hasExpiry: false }] }
         ];
 
         class ErrorBoundary extends React.Component {
@@ -293,10 +293,18 @@
           const actionItems = currentLogs.filter(log => {
              if (log.type === 'unit_closure' || log.type === 'room_closure' || log.isResolved) return false;
              if (log.type === 'trolley_audit') {
-                 return Object.values(log.checklist || {}).some(item => !item.checked);
+                 const logDateStr = getLogDate(log).toISOString().split('T')[0];
+                 return Object.values(log.checklist || {}).some(item => !item.checked || (item.expiry && checkExpiryWarning(item.expiry, logDateStr)));
              } else {
+                 const logDate = getLogDate(log);
+                 const isMonday = logDate.getDay() === 1;
                  const dailyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('daily_'));
-                 return dailyKeys.length > 0 && !dailyKeys.every(k => log.checklist[k]);
+                 const weeklyKeys = Object.keys(log.checklist || {}).filter(k => k.startsWith('weekly_'));
+                 
+                 const hasMissedDaily = dailyKeys.length > 0 && dailyKeys.some(k => !log.checklist[k]);
+                 const hasMissedWeekly = isMonday && weeklyKeys.length > 0 && weeklyKeys.some(k => !log.checklist[k]);
+                 
+                 return hasMissedDaily || hasMissedWeekly;
              }
           });
 
@@ -389,7 +397,7 @@
             setSelectedLocKey(key); setComment(''); setIsRoomClosed(false); setAuditDate(new Date().toISOString().split('T')[0]); 
             if (key === 'bleed_trolley') {
               const initialTrolley = {};
-              BLEED_TROLley_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
+              BLEED_TROLLEY_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
               setChecklist(initialTrolley);
             } else {
               const initialChecklist = {};
@@ -862,16 +870,35 @@
                            </div>
                         ) : actionItems.map(log => {
                            const isTrolley = log.type === 'trolley_audit';
+                           const logDateObj = getLogDate(log);
+                           const logDateStr = logDateObj.toISOString().split('T')[0];
+                           const isMonday = logDateObj.getDay() === 1;
+                           
+                           let issueText = [];
+                           if (isTrolley) {
+                               const missingTrolley = Object.keys(log.checklist).filter(k => !log.checklist[k].checked);
+                               const expiringTrolley = Object.keys(log.checklist).filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, logDateStr));
+                               if (missingTrolley.length > 0) issueText.push(`Missing: ${missingTrolley.join(', ')}`);
+                               if (expiringTrolley.length > 0) issueText.push(`Expiring: ${expiringTrolley.join(', ')}`);
+                           } else {
+                               const missedDaily = Object.keys(log.checklist).filter(k => k.startsWith('daily_') && !log.checklist[k]).map(k => k.replace('daily_',''));
+                               const missedWeekly = isMonday ? Object.keys(log.checklist).filter(k => k.startsWith('weekly_') && !log.checklist[k]).map(k => k.replace('weekly_','')) : [];
+                               
+                               if (missedDaily.length > 0) issueText.push(`Daily: ${missedDaily.join(', ')}`);
+                               if (missedWeekly.length > 0) issueText.push(`Weekly: ${missedWeekly.join(', ')}`);
+                           }
+
                            return (
                              <div key={log.id} className="bg-white p-5 rounded-3xl border-2 border-orange-200 shadow-sm relative">
                                 <div className="flex items-center gap-2 mb-3">
                                   <AlertCircle className="w-5 h-5 text-orange-500" />
                                   <span className="font-extrabold text-gray-800">{log.locationTitle}</span>
-                                  <span className="text-[10px] text-gray-500 ml-auto">{getLogDate(log).toLocaleDateString()}</span>
+                                  <span className="text-[10px] text-gray-500 ml-auto">{logDateObj.toLocaleDateString()}</span>
                                 </div>
-                                <p className="text-xs font-bold text-orange-700 mb-4 bg-orange-50 p-3 rounded-xl border border-orange-100">
-                                  Missed: {isTrolley ? Object.keys(log.checklist).filter(k => !log.checklist[k].checked).join(', ') : Object.keys(log.checklist).filter(k => !log.checklist[k]).map(k => k.replace('daily_','').replace('weekly_','')).join(', ')}
-                                </p>
+                                <div className="text-xs font-bold text-orange-700 mb-4 bg-orange-50 p-3 rounded-xl border border-orange-100 flex flex-col gap-1">
+                                  <span className="text-[9px] uppercase tracking-wider text-orange-500 font-black mb-1">Issues Found:</span>
+                                  {issueText.map((text, idx) => <span key={idx}>• {text}</span>)}
+                                </div>
                                 {resolveId === log.id ? (
                                   <div className="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
                                      <input type="text" placeholder="Your Initials (e.g. JD)" value={resolveInitials} onChange={e => setResolveInitials(e.target.value)} className="w-full text-xs p-3 rounded-xl border font-bold uppercase" />
