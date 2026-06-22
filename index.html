@@ -79,7 +79,6 @@
               "Adm/Disch rooms clean/BP cuffs stock",
               "Clean drip stands – green sticker",
               "IV trolleys – clean surfaces and stock",
-              "ECG machine – clean and charge",
               "Order sandwiches/cylinders",
               "Check patient kitchen checklist done",
               "Clean sharp bins tray and holders",
@@ -165,7 +164,7 @@
         };
 
         const BLEED_TROLLEY_DATA = [
-          { compartment: "Top Compartment", items: [{ name: "Sterile water", qty: 3, hasExpiry: false }, { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" }, { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" }, { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" }, { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" }, { name: "Overtube (25 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Overtube (50 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" }, { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }] },
+          { compartment: "Top Compartment", items: [{ name: "Sterile water", qty: 3, hasExpiry: false }, { name: "Clean cap with CO2 source tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-10" }, { name: "Irrigation tube", qty: 1, hasExpiry: true, defaultExpiry: "2028-09" }, { name: "Danis stent", qty: 2, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "Next powder", qty: 2, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Sengstaken tube", qty: 1, hasExpiry: true, defaultExpiry: "2029-06" }, { name: "Gold probe 7 F", qty: 1, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "OTSC Ovesco clip", qty: 1, hasExpiry: true, defaultExpiry: "2026-03" }, { name: "Overtube (50 cm)", qty: 1, hasExpiry: true, defaultExpiry: "2027-06" }, { name: "Super sucker", qty: 1, hasExpiry: true, defaultExpiry: "2026-09" }] },
           { compartment: "First Drawer", items: [{ name: "Spray Nozzle", qty: 6, hasExpiry: false }, { name: "CLO test plate", qty: 3, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "CLO reagent", qty: 1, hasExpiry: true, defaultExpiry: "2026-06" }, { name: "C/S specimen pot", qty: 1, hasExpiry: false }, { name: "Sodium Chloride 10 ml", qty: 5, hasExpiry: true, defaultExpiry: "2029-07" }, { name: "Xylocaine 10%", qty: 1, hasExpiry: true, defaultExpiry: "2028-03" }, { name: "Infacol", qty: 1, hasExpiry: true, defaultExpiry: "2029-02" }, { name: "Sterile gauze swab", qty: 1, hasExpiry: true, defaultExpiry: "2029-09" }, { name: "Sterile scissor", qty: 2, hasExpiry: true, defaultExpiry: "2026-04" }, { name: "Optilube gel", qty: 15, hasExpiry: true, defaultExpiry: "2030-03" }, { name: "Small mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-04" }, { name: "Large mouthguard", qty: 4, hasExpiry: true, defaultExpiry: "2027-10" }, { name: "Needle 18g (red)", qty: 4, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Needle 21g (green)", qty: 4, hasExpiry: true, defaultExpiry: "2028-02" }] },
           { compartment: "Second Drawer", items: [{ name: "Adrenaline 1:10:00", qty: 4, hasExpiry: true, defaultExpiry: "2027-02" }, { name: "Posiflush", qty: 2, hasExpiry: true, defaultExpiry: "2028-02" }, { name: "Luer slip syringe (60ml)", qty: 3, hasExpiry: true, defaultExpiry: "2030-04" }, { name: "Luer lock syringe (50ml)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Luer slip syringe (20ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-10" }, { name: "Luer slip syringe (10ml)", qty: 1, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Luer slip syringe (3ml)", qty: 2, hasExpiry: true, defaultExpiry: "2029-04" }, { name: "Inco pad", qty: 4, hasExpiry: false }, { name: "Biopsy pots", qty: 4, hasExpiry: true, defaultExpiry: "2029-01" }, { name: "scope valve", qty: 3, hasExpiry: true, defaultExpiry: "2028-08" }] },
           { compartment: "Third Drawer", items: [{ name: "Suction tube", qty: 2, hasExpiry: true, defaultExpiry: "2029-12" }, { name: "Suction liner (green)", qty: 2, hasExpiry: true, defaultExpiry: "2030-07" }, { name: "Suction liner (blue)", qty: 2, hasExpiry: false }, { name: "Yankauer sucker", qty: 2, hasExpiry: false }, { name: "Suction connecting tube", qty: 3, hasExpiry: false }, { name: "Cleaning pots & detergent", qty: 2, hasExpiry: true, defaultExpiry: "2027-04" }] },
@@ -225,6 +224,38 @@
           const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
           const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
 
+          // --- HELPERS (MOVED TO TOP TO PREVENT CRASHES) ---
+          const formatDate = (timestamp) => {
+            if (!timestamp) return "";
+            try {
+              const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+              const dStr = date.toLocaleDateString();
+              const tStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return `${dStr} ${tStr}`;
+            } catch (e) { return "Invalid Date"; }
+          };
+
+          const getLogDate = (log) => {
+            if (!log || !log.timestamp) return new Date();
+            return log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+          };
+
+          const isSameDay = (d1, d2) => {
+            if(!d1 || !d2) return false;
+            return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+          };
+
+          const checkExpiryWarning = (expiryStr, auditDateStr) => {
+            if (!expiryStr) return false; 
+            const [expYear, expMonth] = expiryStr.split('-');
+            const expDate = new Date(parseInt(expYear), parseInt(expMonth) - 1, 1); 
+            const [audYear, audMonth, audDay] = auditDateStr.split('-');
+            const audDate = new Date(parseInt(audYear), parseInt(audMonth) - 1, parseInt(audDay));
+            const thresholdDate = new Date(audDate);
+            thresholdDate.setMonth(thresholdDate.getMonth() + 1);
+            return expDate <= thresholdDate;
+          };
+
           useEffect(() => {
             const initAuth = async () => {
               try {
@@ -233,10 +264,7 @@
                 } else {
                   await signInAnonymously(auth);
                 }
-              } catch (err) {
-                console.error("Auth error:", err);
-                setError("Failed to authenticate.");
-              }
+              } catch (err) { console.error("Auth error:", err); setError("Failed to authenticate."); }
             };
             initAuth();
             const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
@@ -262,30 +290,6 @@
           }, [user]);
 
           const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
-
-          // Crucial fix: Safe date formatter to prevent mobile crashes
-          const formatDate = (timestamp) => {
-            if (!timestamp) return "";
-            try {
-              const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-              const dStr = date.toLocaleDateString();
-              const tStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              return `${dStr} ${tStr}`;
-            } catch (e) {
-              return "Invalid Date";
-            }
-          };
-
-          const getLogDate = (log) => {
-            if (!log || !log.timestamp) return new Date();
-            return log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
-          };
-
-          const isSameDay = (d1, d2) => {
-            if(!d1 || !d2) return false;
-            return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
-          };
-
           const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
           const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
 
@@ -358,9 +362,6 @@
               if (locKey === 'room1') {
                 tasks = tasks.filter(task => task !== 'Dust X-Ray machine');
               }
-              if (locKey === 'recovery') {
-                tasks = tasks.filter(task => task !== 'ECG machine – clean and charge');
-              }
             }
             return tasks;
           };
@@ -380,17 +381,6 @@
               }
             }
             return tasks;
-          };
-
-          const checkExpiryWarning = (expiryStr, auditDateStr) => {
-            if (!expiryStr) return false; 
-            const [expYear, expMonth] = expiryStr.split('-');
-            const expDate = new Date(parseInt(expYear), parseInt(expMonth) - 1, 1); 
-            const [audYear, audMonth, audDay] = auditDateStr.split('-');
-            const audDate = new Date(parseInt(audYear), parseInt(audMonth) - 1, parseInt(audDay));
-            const thresholdDate = new Date(audDate);
-            thresholdDate.setMonth(thresholdDate.getMonth() + 1);
-            return expDate <= thresholdDate;
           };
 
           const startChecklist = (key) => {
@@ -878,14 +868,14 @@
                            if (isTrolley) {
                                const missingTrolley = Object.keys(log.checklist).filter(k => !log.checklist[k].checked);
                                const expiringTrolley = Object.keys(log.checklist).filter(k => log.checklist[k].expiry && checkExpiryWarning(log.checklist[k].expiry, logDateStr));
-                               if (missingTrolley.length > 0) issueText.push(`Missing: ${missingTrolley.join(', ')}`);
-                               if (expiringTrolley.length > 0) issueText.push(`Expiring: ${expiringTrolley.join(', ')}`);
+                               if (missingTrolley.length > 0) issueText.push(`Missing Items: ${missingTrolley.join(', ')}`);
+                               if (expiringTrolley.length > 0) issueText.push(`Expiring Soon: ${expiringTrolley.join(', ')}`);
                            } else {
                                const missedDaily = Object.keys(log.checklist).filter(k => k.startsWith('daily_') && !log.checklist[k]).map(k => k.replace('daily_',''));
                                const missedWeekly = isMonday ? Object.keys(log.checklist).filter(k => k.startsWith('weekly_') && !log.checklist[k]).map(k => k.replace('weekly_','')) : [];
                                
-                               if (missedDaily.length > 0) issueText.push(`Daily: ${missedDaily.join(', ')}`);
-                               if (missedWeekly.length > 0) issueText.push(`Weekly: ${missedWeekly.join(', ')}`);
+                               if (missedDaily.length > 0) issueText.push(`Missed Daily: ${missedDaily.join(', ')}`);
+                               if (missedWeekly.length > 0) issueText.push(`Missed Weekly: ${missedWeekly.join(', ')}`);
                            }
 
                            return (
@@ -919,10 +909,9 @@
 
                     {historyTab === 'monthly' && (
                        <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-6 rounded-3xl text-white shadow-lg mt-4">
-                          <h2 className="font-extrabold text-2xl mb-1">Monthly MTD Overview</h2>
+                          <h2 className="font-extrabold text-2xl mb-1">Monthly Overview</h2>
                           <p className="text-blue-200 text-xs font-bold mb-6">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
                           <div className="space-y-4">
-                             {/* Ensure Bleed Trolley is ONLY shown in Monthly view if Lady Sobell is selected */}
                              {(selectedUnit === 'Lady Sobell' ? Object.entries(CHECKLIST_DATA).concat([['bleed_trolley', {title: 'GI Bleed Emergency Trolley'}]]) : Object.entries(CHECKLIST_DATA)).map(([key, data]) => {
                                 const today = new Date();
                                 const currentMonth = today.getMonth();
@@ -988,7 +977,6 @@
                       </div>
                     )}
 
-                    {/* ALWAYS Render PDF Save Button under Logs and Compliance tabs */}
                     {(historyTab === 'logs' || historyTab === 'compliance') && (
                       <div className="flex items-center justify-between px-2 pt-4">
                         <h2 className="font-extrabold text-xl text-gray-800">{historyTab === 'logs' ? 'Daily Audits' : 'Weekly Overview'}</h2>
