@@ -223,6 +223,10 @@
           const [isRoomClosed, setIsRoomClosed] = useState(false);
           const [auditDate, setAuditDate] = useState(new Date().toISOString().split('T')[0]);
           const [reportEndDate, setReportEndDate] = useState(new Date().toISOString().split('T')[0]);
+          const [selectedMonth, setSelectedMonth] = useState(() => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          });
 
           // --- HELPERS (MOVED TO TOP TO PREVENT CRASHES) ---
           const formatDate = (timestamp) => {
@@ -909,22 +913,39 @@
 
                     {historyTab === 'monthly' && (
                        <div className="bg-gradient-to-b from-blue-600 to-blue-800 p-6 rounded-3xl text-white shadow-lg mt-4">
-                          <h2 className="font-extrabold text-2xl mb-1">Monthly Overview</h2>
-                          <p className="text-blue-200 text-xs font-bold mb-6">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+                          <div className="flex justify-between items-center mb-6">
+                            <div>
+                              <h2 className="font-extrabold text-2xl mb-1">Monthly Overview</h2>
+                              <p className="text-blue-200 text-xs font-bold">Historical & Current Data</p>
+                            </div>
+                            <input 
+                              type="month" 
+                              value={selectedMonth}
+                              max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`}
+                              onChange={(e) => { if(e.target.value) setSelectedMonth(e.target.value); }} 
+                              className="bg-blue-800/50 text-white border border-blue-400/50 rounded-xl px-3 py-2 text-sm font-bold outline-none focus:border-blue-300 hover:bg-blue-800 transition-colors"
+                              style={{ colorScheme: 'dark' }}
+                            />
+                          </div>
                           <div className="space-y-4">
                              {(selectedUnit === 'Lady Sobell' ? Object.entries(CHECKLIST_DATA).concat([['bleed_trolley', {title: 'GI Bleed Emergency Trolley'}]]) : Object.entries(CHECKLIST_DATA)).map(([key, data]) => {
-                                const today = new Date();
-                                const currentMonth = today.getMonth();
-                                const currentYear = today.getFullYear();
-                                const currentDay = today.getDate();
+                                const [selYearStr, selMonthStr] = selectedMonth.split('-');
+                                const targetYear = parseInt(selYearStr, 10);
+                                const targetMonth = parseInt(selMonthStr, 10) - 1;
                                 
-                                const mLogs = currentLogs.filter(l => l.locationKey === key && l.timestamp && getLogDate(l).getMonth() === currentMonth && getLogDate(l).getFullYear() === currentYear);
+                                const today = new Date();
+                                const isCurrentMonth = today.getFullYear() === targetYear && today.getMonth() === targetMonth;
+                                
+                                // If looking at a past month, calculate out of the FULL month's days. If current month, calculate up to today.
+                                const maxDayToCalculate = isCurrentMonth ? today.getDate() : new Date(targetYear, targetMonth + 1, 0).getDate();
+                                
+                                const mLogs = currentLogs.filter(l => l.locationKey === key && l.timestamp && getLogDate(l).getMonth() === targetMonth && getLogDate(l).getFullYear() === targetYear);
                                 
                                 let requiredDays = 0;
                                 let completedDays = 0;
                                 
-                                for (let day = 1; day <= currentDay; day++) {
-                                    const d = new Date(currentYear, currentMonth, day);
+                                for (let day = 1; day <= maxDayToCalculate; day++) {
+                                    const d = new Date(targetYear, targetMonth, day);
                                     const closureLog = currentLogs.find(log => (log.type === 'unit_closure' || (log.type === 'room_closure' && log.locationKey === key)) && isSameDay(getLogDate(log), d));
                                     
                                     if (closureLog) continue;
