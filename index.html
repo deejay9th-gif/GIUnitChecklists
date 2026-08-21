@@ -295,8 +295,11 @@
           }, [user]);
 
           const currentLogs = logs.filter(log => log.unit === selectedUnit || (!log.unit && selectedUnit === 'Lady Sobell'));
-          const todayLogs = currentLogs.filter(log => isSameDay(getLogDate(log), new Date()));
-          const isUnitClosedToday = todayLogs.some(log => log.type === 'unit_closure');
+          
+          const [aYear, aMonth, aDay] = auditDate.split('-');
+          const targetDateObj = new Date(parseInt(aYear), parseInt(aMonth) - 1, parseInt(aDay));
+          const targetDateLogs = currentLogs.filter(log => isSameDay(getLogDate(log), targetDateObj));
+          const isUnitClosedTargetDate = targetDateLogs.some(log => log.type === 'unit_closure');
 
           // Determine Pending Action Items
           const actionItems = currentLogs.filter(log => {
@@ -451,7 +454,7 @@
           };
 
           const startChecklist = (key) => {
-            setSelectedLocKey(key); setComment(''); setIsRoomClosed(false); setAuditDate(new Date().toISOString().split('T')[0]); 
+            setSelectedLocKey(key); setComment(''); setIsRoomClosed(false); 
             if (key === 'bleed_trolley') {
               const initialTrolley = {};
               BLEED_TROLLEY_DATA.forEach(comp => comp.items.forEach(item => { initialTrolley[item.name] = { checked: false, expiry: item.defaultExpiry || '' }; }));
@@ -716,7 +719,7 @@
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <button onClick={() => setView('select-location')} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]">
+                      <button onClick={() => { setAuditDate(new Date().toISOString().split('T')[0]); setView('select-location'); }} className="p-6 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center text-center gap-3 hover:shadow-md hover:border-blue-300 transition-all active:scale-[0.98]">
                         <div className="bg-blue-50 p-4 rounded-2xl text-blue-600"><ListChecks className="w-8 h-8" /></div>
                         <div className="font-bold text-gray-800">New Audit</div>
                       </button>
@@ -743,12 +746,18 @@
                 {/* --- Select Location --- */}
                 {view === 'select-location' && (
                   <div className="space-y-4 pt-2">
-                    <h2 className="font-extrabold text-xl px-1 text-gray-800">Select Area ({selectedUnit})</h2>
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-3xl flex items-center justify-between shadow-sm mb-2">
+                      <div>
+                        <span className="text-[10px] uppercase font-black text-blue-500 tracking-widest block mb-0.5">Audit Date</span>
+                        <div className="font-extrabold text-blue-900 text-sm">{selectedUnit}</div>
+                      </div>
+                      <input type="date" value={auditDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setAuditDate(e.target.value)} className="bg-white border border-blue-200 text-sm font-bold text-blue-800 px-3 py-2 rounded-xl shadow-sm outline-none focus:border-blue-500 w-36" />
+                    </div>
                     <div className="space-y-3">
                       {Object.entries(CHECKLIST_DATA).map(([key, data]) => {
-                        const roomLog = todayLogs.find(l => l.locationKey === key && l.type !== 'trolley_audit');
-                        const isCompleted = isUnitClosedToday || !!roomLog;
-                        const isClosed = isUnitClosedToday || (roomLog?.type === 'room_closure');
+                        const roomLog = targetDateLogs.find(l => l.locationKey === key && l.type !== 'trolley_audit');
+                        const isCompleted = isUnitClosedTargetDate || !!roomLog;
+                        const isClosed = isUnitClosedTargetDate || (roomLog?.type === 'room_closure');
                         
                         return (
                           <button key={key} onClick={() => !isCompleted && startChecklist(key)} disabled={isCompleted} className={`w-full text-left p-5 shadow-sm border rounded-2xl flex items-center justify-between transition-all group ${isClosed ? 'bg-gray-100 border-gray-200 opacity-90 cursor-not-allowed' : isCompleted ? 'bg-green-50 border-green-200 opacity-90 cursor-not-allowed' : 'bg-white border-gray-100 hover:border-blue-400 hover:shadow-md'}`}>
@@ -781,7 +790,7 @@
                     )}
 
                     <div className="pt-6 border-t border-gray-200 mt-6">
-                      <button onClick={() => setView('mark-closed')} className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all"><Ban className="w-5 h-5 text-gray-500" />Unit Closed / Not Running</button>
+                      <button onClick={() => { setClosureDate(auditDate); setView('mark-closed'); }} className="w-full p-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl flex items-center justify-center gap-2 transition-all"><Ban className="w-5 h-5 text-gray-500" />Unit Closed / Not Running</button>
                       <p className="text-center text-[10px] text-gray-500 mt-2 font-medium">Mark entire unit as closed for a specific date</p>
                     </div>
                   </div>
@@ -1347,7 +1356,7 @@
               <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 pb-safe shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)]">
                 <div className="max-w-md mx-auto flex justify-between px-2 py-1">
                   <NavItem icon={<LayoutDashboard className="w-6 h-6" />} label="Home" isActive={view === 'home'} onClick={() => setView('home')} />
-                  <NavItem icon={<ListChecks className="w-6 h-6" />} label="Audit" isActive={view === 'select-location' || view === 'check'} onClick={() => setView('select-location')} />
+                  <NavItem icon={<ListChecks className="w-6 h-6" />} label="Audit" isActive={view === 'select-location' || view === 'check'} onClick={() => { setAuditDate(new Date().toISOString().split('T')[0]); setView('select-location'); }} />
                   <NavItem icon={<div className="relative"><CalendarDays className="w-6 h-6" />{actionItems.length > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white"></span>}</div>} label="Logs" isActive={view === 'history'} onClick={() => setView('history')} />
                 </div>
               </nav>
