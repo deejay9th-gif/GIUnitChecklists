@@ -501,6 +501,24 @@
               const isToday = auditDate === new Date().toISOString().split('T')[0];
               if (!isToday) targetTimestamp.setHours(12, 0, 0, 0);
               
+              // --- MANDATORY WEEKLY CHECK ON MONDAYS ---
+              if (!isRoomClosed && selectedLocKey !== 'bleed_trolley') {
+                if (targetTimestamp.getDay() === 1) { // 1 = Monday
+                  const weeklyTasks = getWeeklyTasks(selectedLocKey, selectedUnit);
+                  const hasMissedWeekly = weeklyTasks.some(task => !checklist[`weekly_${task}`]);
+                  
+                  if (hasMissedWeekly) {
+                    setSubmitting(false);
+                    setMessageBox({
+                        title: "Weekly Checklist Incomplete",
+                        message: "It's Monday! Please ensure all Weekly Tasks are completed and ticked before submitting."
+                    });
+                    return;
+                  }
+                }
+              }
+              // ------------------------------------------
+
               // --- DUPLICATE CHECK LOGIC ---
               const isDuplicate = currentLogs.some(log => 
                 log.locationKey === selectedLocKey && 
@@ -820,7 +838,7 @@
                       </label>
                       <label className="block">
                         <span className="text-sm font-bold text-gray-700">Audit Date</span>
-                        <input type="date" value={auditDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setAuditDate(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border font-bold text-gray-800" />
+                        <input type="date" value={auditDate} max={new Date().toISOString().split('T')[0]} onChange={(e) => setAuditDate(e.target.value)} required className="mt-2 block w-full rounded-2xl border-gray-200 shadow-sm p-4 bg-gray-50 border font-bold text-gray-800" disabled />
                       </label>
                     </div>
 
